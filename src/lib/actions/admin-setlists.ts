@@ -20,6 +20,8 @@ const teamSetlistSchema = setlistSchema.extend({
           .max(120, "Catatan maksimal 120 karakter")
           .optional()
           .transform((note) => note || undefined),
+        arrangement: z.string().max(15000, "Aransemen terlalu panjang").optional(),
+        arrangementKey: z.string().max(4).optional(),
       }),
     )
     .max(30, "Maksimal 30 lagu per setlist"),
@@ -84,4 +86,16 @@ export async function deleteTeamSetlist(id: string) {
 
   revalidatePath("/", "layout");
   return { success: true };
+}
+
+// isi lagu dari library, sebagai titik awal aransemen khusus setlist
+export async function getSongForArrangement(slug: string) {
+  await requireAdminName();
+
+  const { data } = await getSupabase()
+    .from("songs")
+    .select("content, key")
+    .eq("slug", slug)
+    .maybeSingle();
+  return data ? { content: data.content as string, key: data.key as string } : null;
 }

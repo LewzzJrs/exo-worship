@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowDownIcon, ArrowUpIcon, FileDownIcon, XIcon } from "lucide-react";
+import { ArrowDownIcon, ArrowUpIcon, FileDownIcon, FilePenLineIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,10 @@ type SetlistItemsEditorProps = {
   date: string;
   // link setlist untuk dibagikan; kosong kalau setlist hanya ada di HP
   sharePath?: string;
+  // link PDF yang sudah tersimpan (setlist tim, termasuk aransemen khusus)
+  pdfHref?: string;
+  // tombol aransemen khusus, hanya untuk setlist tim
+  onEditArrangement?: (index: number) => void;
   onChange: (items: SetlistItem[]) => void;
 };
 
@@ -38,6 +43,8 @@ export default function SetlistItemsEditor({
   name,
   date,
   sharePath,
+  pdfHref,
+  onEditArrangement,
   onChange,
 }: SetlistItemsEditorProps) {
   // lagu yang sudah dihapus dari library dilewati
@@ -70,7 +77,7 @@ export default function SetlistItemsEditor({
         />
         {rows.length > 0 && (
           <Button asChild>
-            <a href={buildPdfUrl({ items: rows, name, date })} download>
+            <a href={pdfHref ?? buildPdfUrl({ items: rows, name, date })} download>
               <FileDownIcon />
               Download PDF gabungan
             </a>
@@ -110,6 +117,11 @@ export default function SetlistItemsEditor({
                     >
                       <p className="truncate font-medium">{row.song?.title}</p>
                       <p className="truncate text-sm text-muted-foreground">{row.song?.artist}</p>
+                      {row.arrangement && (
+                        <Badge variant="outline" className="mt-1">
+                          Aransemen khusus
+                        </Badge>
+                      )}
                     </Link>
                     <Button
                       variant="ghost"
@@ -135,6 +147,16 @@ export default function SetlistItemsEditor({
                         ))}
                       </SelectContent>
                     </Select>
+                    {onEditArrangement && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEditArrangement(row.index)}
+                      >
+                        <FilePenLineIcon />
+                        Aransemen
+                      </Button>
+                    )}
                     <div className="ml-auto flex gap-1">
                       <Button
                         variant="outline"

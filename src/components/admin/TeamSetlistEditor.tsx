@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
+import ArrangementDialog from "@/components/admin/ArrangementDialog";
 import {
   DraftBanner,
   LeaveConfirmDialog,
@@ -49,6 +50,9 @@ export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorP
   const [savedItems, setSavedItems] = useState<SetlistItem[]>(setlist?.items ?? []);
   const [isSaving, startSaving] = useTransition();
   const [isDeleting, startDeleting] = useTransition();
+  // urutan lagu yang aransemennya sedang diedit
+  const [arrangingIndex, setArrangingIndex] = useState<number | null>(null);
+  const closeArrangement = useCallback(() => setArrangingIndex(null), []);
   const form = useForm<SetlistValues>({
     resolver: zodResolver(setlistSchema),
     defaultValues: { name: setlist?.name ?? "", date: setlist?.date ?? nextSunday() },
@@ -68,6 +72,18 @@ export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorP
     !isDraftHandled &&
     JSON.stringify(initialDraft.values) !==
       JSON.stringify({ name: defaultValues?.name, date: defaultValues?.date, items: savedItems });
+
+  const arrangingItem = arrangingIndex === null ? null : items[arrangingIndex];
+
+  function updateArrangement(arrangement?: string, arrangementKey?: string) {
+    if (arrangingIndex === null) return;
+    setItems(
+      items.map((item, index) =>
+        index === arrangingIndex ? { ...item, arrangement, arrangementKey } : item,
+      ),
+    );
+    setArrangingIndex(null);
+  }
 
   function restoreDraft() {
     if (!initialDraft) return;
@@ -154,8 +170,20 @@ export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorP
           name={name || "Setlist"}
           date={date}
           sharePath={setlist ? `/setlist/tim/${setlist.id}` : undefined}
+          pdfHref={setlist ? `/api/pdf?setlist=${setlist.id}` : undefined}
+          onEditArrangement={setArrangingIndex}
           onChange={setItems}
         />
+        {arrangingItem && (
+          <ArrangementDialog
+            key={arrangingIndex}
+            item={arrangingItem}
+            songTitle={songs.find((song) => song.slug === arrangingItem.slug)?.title ?? "Lagu"}
+            onClose={closeArrangement}
+            onSave={(arrangement, arrangementKey) => updateArrangement(arrangement, arrangementKey)}
+            onReset={() => updateArrangement(undefined, undefined)}
+          />
+        )}
       </div>
 
       <div className="mt-8 flex flex-wrap items-center gap-2 border-t pt-5">

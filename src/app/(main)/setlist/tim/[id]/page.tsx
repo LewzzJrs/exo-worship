@@ -8,7 +8,8 @@ import AuthorInfo from "@/components/shared/AuthorInfo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { buildPdfUrl, formatSetlistDate } from "@/lib/setlist-utils";
+import { getEditHistory } from "@/lib/edit-history";
+import { formatSetlistDate } from "@/lib/setlist-utils";
 import { getTeamSetlist } from "@/lib/setlists";
 import { getSongs } from "@/lib/songs";
 
@@ -24,13 +25,14 @@ export default async function TeamSetlistPage({ params }: PageProps<"/setlist/ti
   const { id } = await params;
   const [setlist, songs] = await Promise.all([getTeamSetlist(id), getSongs()]);
   if (!setlist) notFound();
+  const edits = await getEditHistory("setlist", setlist.id);
 
   // lagu yang sudah dihapus dari library dilewati
   const items = setlist.items
-    .map((item) => ({ ...item, song: songs.find((song) => song.slug === item.slug) }))
+    .map((item, index) => ({ ...item, index, song: songs.find((song) => song.slug === item.slug) }))
     .filter((item) => item.song !== undefined);
-  const songHref = (item: (typeof items)[number]) =>
-    `/lagu/${item.slug}?key=${encodeURIComponent(item.key)}`;
+  // lagu dibuka dari dalam setlist, supaya aransemen khusus dan key setlist yang dipakai
+  const songHref = (item: (typeof items)[number]) => `/setlist/tim/${setlist.id}/${item.index + 1}`;
 
   return (
     <>
@@ -55,12 +57,13 @@ export default async function TeamSetlistPage({ params }: PageProps<"/setlist/ti
         createdBy={setlist.createdBy}
         updatedAt={setlist.updatedAt}
         updatedBy={setlist.updatedBy}
+        edits={edits}
       />
 
       {items.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
           <Button asChild>
-            <a href={buildPdfUrl({ items, name: setlist.name, date: setlist.date })} download>
+            <a href={`/api/pdf?setlist=${setlist.id}`} download>
               <FileDownIcon />
               Download PDF gabungan
             </a>
@@ -91,6 +94,11 @@ export default async function TeamSetlistPage({ params }: PageProps<"/setlist/ti
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{item.song?.title}</p>
                     <p className="truncate text-sm text-muted-foreground">{item.song?.artist}</p>
+                    {item.arrangement && (
+                      <Badge variant="outline" className="mt-1">
+                        Aransemen khusus
+                      </Badge>
+                    )}
                     {item.note && <p className="mt-1 text-sm italic">{item.note}</p>}
                   </div>
                   <Badge variant="secondary" className="shrink-0">

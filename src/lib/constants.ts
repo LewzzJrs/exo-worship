@@ -5,7 +5,7 @@ export const ACCESS_COOKIE = "exo_akses";
 // cookie akses berlaku 180 hari, setelah itu anggota masukkan kode lagi
 export const ACCESS_MAX_AGE = 60 * 60 * 24 * 180;
 
-// ID acak per HP, pengganti akun untuk menghitung suka, trending, dan request
+// ID acak per HP, pengganti akun untuk menghitung suka dan request
 export const DEVICE_COOKIE = "exo_perangkat";
 export const DEVICE_MAX_AGE = 60 * 60 * 24 * 365 * 2;
 
@@ -30,3 +30,7 @@ export const ADMIN_NAME_COOKIE = "exo_admin_nama";
 export function isAdminName(name: string | undefined): name is AdminName {
   return ADMIN_NAMES.includes(name as AdminName);
 }
+
+// hanya admin ini yang boleh mengatur lagu rekomendasi bulanan
+export const RECOMMENDATION_ADMIN: AdminName = "Lewi";
+export const MAX_RECOMMENDATIONS = 10;

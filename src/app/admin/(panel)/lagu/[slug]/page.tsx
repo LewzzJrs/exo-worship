@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeftIcon } from "lucide-react";
 import SongEditor from "@/components/admin/SongEditor";
 import AuthorInfo from "@/components/shared/AuthorInfo";
+import { getEditHistory } from "@/lib/edit-history";
 import { getSongBySlug } from "@/lib/songs";
 
 export const metadata: Metadata = {
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 
 export default async function EditSongPage({ params }: PageProps<"/admin/lagu/[slug]">) {
   const { slug } = await params;
-  const song = await getSongBySlug(slug);
+  const [song, edits] = await Promise.all([getSongBySlug(slug), getEditHistory("lagu", slug)]);
   if (!song) notFound();
 
   return (
@@ -31,6 +32,7 @@ export default async function EditSongPage({ params }: PageProps<"/admin/lagu/[s
         createdBy={song.createdBy}
         updatedAt={song.updatedAt}
         updatedBy={song.updatedBy}
+        edits={edits}
       />
       <SongEditor song={song} />
     </>

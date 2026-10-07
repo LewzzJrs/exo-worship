@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { ChevronRightIcon } from "lucide-react";
+import AdminAvatar from "@/components/shared/AdminAvatar";
 import SongCard from "@/components/song/SongCard";
+import { formatMonth, getMonthlyRecommendedSongs } from "@/lib/recommendations";
 import { getSongs } from "@/lib/songs";
-import { getTrendingSongs } from "@/lib/stats";
 
 export default async function HomePage() {
-  const [trendingSongs, allSongs] = await Promise.all([
-    getTrendingSongs(5),
+  const [recommendation, allSongs] = await Promise.all([
+    getMonthlyRecommendedSongs(),
     getSongs({ sort: "terbaru" }),
   ]);
   const latestSongs = allSongs.slice(0, 5);
@@ -17,10 +18,21 @@ export default async function HomePage() {
       <p className="mt-1 text-sm text-muted-foreground">Library chord tim Exo Worship.</p>
 
       <section className="mt-6">
-        <h2 className="mb-3 text-base font-semibold">Trending minggu ini</h2>
-        {trendingSongs.length > 0 ? (
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 className="text-base font-semibold">Rekomendasi bulan ini</h2>
+            <p className="text-xs text-muted-foreground">{formatMonth(recommendation.month)}</p>
+          </div>
+          {recommendation.updatedBy && recommendation.songs.length > 0 && (
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <AdminAvatar name={recommendation.updatedBy} size="sm" />
+              Pilihan {recommendation.updatedBy}
+            </p>
+          )}
+        </div>
+        {recommendation.songs.length > 0 ? (
           <ol className="grid gap-3">
-            {trendingSongs.map((song, index) => (
+            {recommendation.songs.map((song, index) => (
               <li key={song.slug} className="flex items-center gap-3">
                 <span className="w-5 shrink-0 text-center text-lg font-semibold text-muted-foreground tabular-nums">
                   {index + 1}
@@ -33,7 +45,7 @@ export default async function HomePage() {
           </ol>
         ) : (
           <p className="rounded-xl bg-card p-4 text-sm text-muted-foreground">
-            Belum ada lagu yang dibuka minggu ini.
+            Belum ada lagu rekomendasi untuk bulan ini.
           </p>
         )}
       </section>

@@ -8,19 +8,24 @@ const ADMIN_LINKS = [
   { href: "/admin", label: "Ringkasan" },
   { href: "/admin/lagu", label: "Lagu" },
   { href: "/admin/setlist", label: "Setlist Tim" },
+  { href: "/admin/rekomendasi", label: "Rekomendasi" },
   { href: "/admin/request", label: "Request" },
   { href: "/admin/riwayat", label: "Riwayat" },
   { href: "/admin/pengaturan", label: "Pengaturan" },
 ];
 
-export default function AdminNav() {
+// menu Rekomendasi hanya untuk admin yang boleh mengaturnya
+export default function AdminNav({ showRecommendations }: { showRecommendations: boolean }) {
   const pathname = usePathname();
+  const links = ADMIN_LINKS.filter(
+    (link) => showRecommendations || link.href !== "/admin/rekomendasi",
+  );
 
   return (
     // bisa digeser ke samping di HP
     <nav className="-mx-4 overflow-x-auto px-4">
       <ul className="flex gap-1">
-        {ADMIN_LINKS.map((link) => {
+        {links.map((link) => {
           const isActive =
             link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);
 

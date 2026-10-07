@@ -5,21 +5,6 @@ import { songExists } from "@/lib/songs";
 import { getLikeSummary, type LikeSummary } from "@/lib/stats";
 import { getSupabase } from "@/lib/supabase";
 
-// dicatat saat halaman lagu dibuka, satu HP dihitung sekali per hari (diatur di database)
-export async function recordView(slug: string) {
-  await verifyAccess();
-  const deviceId = await getDeviceId();
-  if (!deviceId || !(await songExists(slug))) return;
-
-  const { error } = await getSupabase()
-    .from("song_views")
-    .upsert(
-      { song_slug: slug, device_id: deviceId },
-      { onConflict: "song_slug,device_id,viewed_on", ignoreDuplicates: true },
-    );
-  if (error) console.error("Gagal mencatat view:", error.message);
-}
-
 export async function toggleLike(slug: string): Promise<LikeSummary | { error: string }> {
   await verifyAccess();
   const deviceId = await getDeviceId();

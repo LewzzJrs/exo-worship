@@ -72,3 +72,20 @@ export function lineToRows(line: Line) {
 
   return { chords: chords.trimEnd() || null, lyrics: lyrics.trimEnd() || null };
 }
+
+// tulis ulang isi lagu di key lain (chord di atas lirik), misalnya untuk titik awal aransemen
+export function transposeContent(content: string, fromKey: string, toKey: string) {
+  if (fromKey === toKey) return content;
+
+  return parseSections(content, fromKey, toKey)
+    .map((section) => {
+      const lines = section.song.lines.flatMap((line) => {
+        const rows = lineToRows(line);
+        return [rows.chords, rows.lyrics].filter((row) => row !== null);
+      });
+      return [section.label ? `[${section.label}]` : null, ...lines]
+        .filter((line) => line !== null)
+        .join("\n");
+    })
+    .join("\n\n");
+}

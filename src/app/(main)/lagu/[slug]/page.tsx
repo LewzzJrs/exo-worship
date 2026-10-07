@@ -9,8 +9,8 @@ import LikeButton from "@/components/song/LikeButton";
 import SaveButton from "@/components/song/SaveButton";
 import SongPdfButton from "@/components/song/SongPdfButton";
 import SongViewer from "@/components/song/SongViewer";
-import ViewTracker from "@/components/song/ViewTracker";
 import YoutubePlayer from "@/components/song/YoutubePlayer";
+import { getEditHistory } from "@/lib/edit-history";
 import { normalizeKey } from "@/lib/keys";
 import { getSongBySlug } from "@/lib/songs";
 import { getLikeSummary } from "@/lib/stats";
@@ -29,7 +29,10 @@ export default async function SongPage({ params, searchParams }: PageProps<"/lag
 
   const initialKey = normalizeKey(typeof key === "string" ? key : undefined, song.key);
   const videoId = getYoutubeId(song.youtubeUrl);
-  const likeSummary = await getLikeSummary(song.slug);
+  const [likeSummary, edits] = await Promise.all([
+    getLikeSummary(song.slug),
+    getEditHistory("lagu", song.slug),
+  ]);
 
   return (
     <>
@@ -54,6 +57,7 @@ export default async function SongPage({ params, searchParams }: PageProps<"/lag
         createdBy={song.createdBy}
         updatedAt={song.updatedAt}
         updatedBy={song.updatedBy}
+        edits={edits}
       />
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -62,7 +66,6 @@ export default async function SongPage({ params, searchParams }: PageProps<"/lag
         <AddToSetlistDialog slug={song.slug} title={song.title} originalKey={song.key} />
         <SongPdfButton slug={song.slug} originalKey={song.key} />
       </div>
-      <ViewTracker slug={song.slug} />
 
       {videoId && (
         <div className="mt-5">

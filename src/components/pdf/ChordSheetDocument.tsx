@@ -11,6 +11,8 @@ export type PdfSong = {
   key: string;
   // catatan dari setlist, misalnya "intro 2x"
   note?: string;
+  // memakai aransemen khusus setlist, bukan versi library
+  arranged?: boolean;
 };
 
 type ChordSheetDocumentProps = {
@@ -105,12 +107,20 @@ function Footer({ label }: { label: string }) {
   );
 }
 
-type SongPageProps = { song: Song; songKey: string; note?: string; footer: string };
+type SongPageProps = {
+  song: Song;
+  songKey: string;
+  note?: string;
+  arranged?: boolean;
+  footer: string;
+};
 
-function SongPage({ song, songKey, note, footer }: SongPageProps) {
+function SongPage({ song, songKey, note, arranged, footer }: SongPageProps) {
   const sections = parseSections(song.content, song.key, songKey);
   const meta = [
-    songKey === song.key ? `Key ${songKey}` : `Key ${songKey} (asli ${song.key})`,
+    // aransemen khusus tidak menyebut key asli library
+    songKey === song.key || arranged ? `Key ${songKey}` : `Key ${songKey} (asli ${song.key})`,
+    arranged && "Aransemen khusus setlist",
     song.bpm && `${song.bpm} BPM`,
     song.timeSignature,
   ].filter(Boolean);
@@ -178,8 +188,15 @@ export function ChordSheetDocument({ songs, name, date }: ChordSheetDocumentProp
         </Page>
       )}
 
-      {songs.map(({ song, key, note }, index) => (
-        <SongPage key={index} song={song} songKey={key} note={note} footer={footer} />
+      {songs.map(({ song, key, note, arranged }, index) => (
+        <SongPage
+          key={index}
+          song={song}
+          songKey={key}
+          note={note}
+          arranged={arranged}
+          footer={footer}
+        />
       ))}
     </Document>
   );

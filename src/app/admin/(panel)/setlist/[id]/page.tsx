@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeftIcon } from "lucide-react";
 import TeamSetlistEditor from "@/components/admin/TeamSetlistEditor";
 import AuthorInfo from "@/components/shared/AuthorInfo";
+import { getEditHistory } from "@/lib/edit-history";
 import { getTeamSetlist } from "@/lib/setlists";
 import { getSongs } from "@/lib/songs";
 
@@ -13,7 +14,11 @@ export const metadata: Metadata = {
 
 export default async function EditTeamSetlistPage({ params }: PageProps<"/admin/setlist/[id]">) {
   const { id } = await params;
-  const [setlist, songs] = await Promise.all([getTeamSetlist(id), getSongs({ sort: "judul" })]);
+  const [setlist, songs, edits] = await Promise.all([
+    getTeamSetlist(id),
+    getSongs({ sort: "judul" }),
+    getEditHistory("setlist", id),
+  ]);
   if (!setlist) notFound();
 
   return (
@@ -32,6 +37,7 @@ export default async function EditTeamSetlistPage({ params }: PageProps<"/admin/
         createdBy={setlist.createdBy}
         updatedAt={setlist.updatedAt}
         updatedBy={setlist.updatedBy}
+        edits={edits}
       />
       <TeamSetlistEditor setlist={setlist} songs={songs} />
     </>

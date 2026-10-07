@@ -1,34 +1,12 @@
 import "server-only";
 
 import { getDeviceId, verifyAccess } from "@/lib/dal";
-import { getSongs } from "@/lib/songs";
 import { getSupabase } from "@/lib/supabase";
-import type { SongSummary } from "@/types/song";
 
 export type LikeSummary = {
   count: number;
   liked: boolean;
 };
-
-// trending 7 hari terakhir: anggota yang membuka lagu + suka (dihitung 2x)
-export async function getTrendingSongs(limit = 5): Promise<SongSummary[]> {
-  await verifyAccess();
-
-  const { data, error } = await getSupabase().rpc("trending_songs", {
-    days: 7,
-    max_results: limit,
-  });
-  if (error) {
-    // trending gagal dimuat jangan sampai membuat beranda error
-    console.error("Gagal memuat trending:", error.message);
-    return [];
-  }
-
-  const songs = await getSongs();
-  return (data as { song_slug: string }[])
-    .map((row) => songs.find((song) => song.slug === row.song_slug))
-    .filter((song) => song !== undefined);
-}
 
 export async function getLikeSummary(slug: string): Promise<LikeSummary> {
   await verifyAccess();

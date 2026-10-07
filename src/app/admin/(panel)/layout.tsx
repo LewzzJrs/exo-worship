@@ -6,6 +6,7 @@ import Logo from "@/components/shared/Logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { leaveAdminProfile } from "@/lib/actions/admin-auth";
+import { RECOMMENDATION_ADMIN } from "@/lib/constants";
 import { requireAdminName } from "@/lib/dal";
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
@@ -45,7 +46,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
             </div>
           </div>
           <div className="pb-2">
-            <AdminNav />
+            <AdminNav showRecommendations={adminName === RECOMMENDATION_ADMIN} />
           </div>
         </div>
       </header>
