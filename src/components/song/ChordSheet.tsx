@@ -33,7 +33,10 @@ function ChordLine({ line }: { line: Line }) {
               {pair.chords.trim()}
             </span>
           )}
-          {hasLyrics && <span className="leading-6 whitespace-pre-wrap">{pair.lyrics}</span>}
+          {/* tinggi tetap walau kosong, supaya chord di ujung baris tidak turun sejajar lirik */}
+          {hasLyrics && (
+            <span className="min-h-6 leading-6 whitespace-pre-wrap">{pair.lyrics}</span>
+          )}
         </span>
       ))}
     </div>
