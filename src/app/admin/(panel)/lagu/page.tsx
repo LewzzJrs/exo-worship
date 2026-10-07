@@ -51,12 +51,12 @@ export default async function AdminSongsPage({ searchParams }: PageProps<"/admin
                       {song.artist || "Tanpa artis"}
                     </p>
                     <AuthorInfo
-                      className="mt-1 truncate"
+                      variant="inline"
+                      className="mt-1.5"
                       createdAt={song.createdAt}
                       createdBy={song.createdBy}
                       updatedAt={song.updatedAt}
                       updatedBy={song.updatedBy}
-                      showUpdate
                     />
                   </div>
                   <Badge variant="secondary">Key {song.key}</Badge>

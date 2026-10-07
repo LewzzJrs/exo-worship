@@ -48,7 +48,13 @@ export default async function SongPage({ params, searchParams }: PageProps<"/lag
         {song.bpm && <Badge variant="outline">{song.bpm} BPM</Badge>}
         {song.timeSignature && <Badge variant="outline">{song.timeSignature}</Badge>}
       </div>
-      <AuthorInfo className="mt-2" createdAt={song.createdAt} createdBy={song.createdBy} />
+      <AuthorInfo
+        className="mt-4"
+        createdAt={song.createdAt}
+        createdBy={song.createdBy}
+        updatedAt={song.updatedAt}
+        updatedBy={song.updatedBy}
+      />
 
       <div className="mt-4 flex flex-wrap gap-2">
         <LikeButton slug={song.slug} initial={likeSummary} />

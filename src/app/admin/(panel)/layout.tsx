@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ExternalLinkIcon, LogOutIcon, UserRoundIcon } from "lucide-react";
+import { ExternalLinkIcon, LogOutIcon } from "lucide-react";
 import AdminNav from "@/components/admin/AdminNav";
+import AdminAvatar from "@/components/shared/AdminAvatar";
 import Logo from "@/components/shared/Logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,10 +23,10 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
             <div className="flex items-center gap-4">
               <Link
                 href="/admin/pilih-nama"
-                className="flex items-center gap-1 text-sm font-medium hover:underline"
+                className="flex items-center gap-1.5 rounded-full border bg-card py-0.5 pr-3 pl-0.5 text-sm font-medium hover:shadow-xs"
                 title="Ganti nama admin"
               >
-                <UserRoundIcon className="size-4" />
+                <AdminAvatar name={adminName} size="sm" />
                 {adminName}
               </Link>
               <Link

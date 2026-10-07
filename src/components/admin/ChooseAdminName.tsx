@@ -1,13 +1,13 @@
 "use client";
 
 import { useTransition } from "react";
-import { UserRoundIcon } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import AdminAvatar from "@/components/shared/AdminAvatar";
 import { chooseAdminName } from "@/lib/actions/admin-auth";
 import { ADMIN_NAMES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
+// pilih profil admin seperti memilih akun
 export default function ChooseAdminName({ currentName }: { currentName: string | null }) {
   const [isPending, startTransition] = useTransition();
 
@@ -20,22 +20,30 @@ export default function ChooseAdminName({ currentName }: { currentName: string |
   }
 
   return (
-    <ul className="grid gap-3">
-      {ADMIN_NAMES.map((name) => (
-        <li key={name}>
-          <Button
-            variant={name === currentName ? "default" : "outline"}
-            size="lg"
-            className={cn("h-14 w-full justify-start text-base", name !== currentName && "bg-card")}
-            disabled={isPending}
-            onClick={() => handleChoose(name)}
-          >
-            <UserRoundIcon />
-            {name}
-            {name === currentName && <span className="ml-auto text-xs">sekarang</span>}
-          </Button>
-        </li>
-      ))}
+    <ul className="grid grid-cols-3 gap-3">
+      {ADMIN_NAMES.map((name) => {
+        const isCurrent = name === currentName;
+
+        return (
+          <li key={name}>
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() => handleChoose(name)}
+              className={cn(
+                "flex w-full flex-col items-center gap-2 rounded-2xl border bg-card px-2 py-5 transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 disabled:opacity-60",
+                isCurrent && "border-foreground ring-2 ring-foreground/10",
+              )}
+            >
+              <AdminAvatar name={name} size="lg" />
+              <span className="text-sm font-semibold">{name}</span>
+              <span className="text-[11px] text-muted-foreground">
+                {isCurrent ? "Sedang dipakai" : "Admin"}
+              </span>
+            </button>
+          </li>
+        );
+      })}
     </ul>
   );
 }

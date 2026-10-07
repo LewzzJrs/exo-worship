@@ -26,12 +26,11 @@ export default async function EditSongPage({ params }: PageProps<"/admin/lagu/[s
       </Link>
       <h1 className="text-2xl font-semibold">Edit: {song.title}</h1>
       <AuthorInfo
-        className="mt-1 mb-6"
+        className="mt-3 mb-6 max-w-xl"
         createdAt={song.createdAt}
         createdBy={song.createdBy}
         updatedAt={song.updatedAt}
         updatedBy={song.updatedBy}
-        showUpdate
       />
       <SongEditor song={song} />
     </>

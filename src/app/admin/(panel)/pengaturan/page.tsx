@@ -1,18 +1,29 @@
 import type { Metadata } from "next";
 import { LogOutIcon } from "lucide-react";
+import ProfilePhotoForm from "@/components/admin/ProfilePhotoForm";
 import TeamCodeForm from "@/components/admin/TeamCodeForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { adminLogout } from "@/lib/actions/admin-auth";
+import { requireAdminName } from "@/lib/dal";
 
 export const metadata: Metadata = {
   title: "Pengaturan",
 };
 
-export default function AdminSettingsPage() {
+export default async function AdminSettingsPage() {
+  const adminName = await requireAdminName();
+
   return (
     <>
       <h1 className="text-2xl font-semibold">Pengaturan</h1>
+
+      <Card className="mt-5 max-w-xl">
+        <CardContent>
+          <h2 className="mb-4 font-semibold">Profil kamu</h2>
+          <ProfilePhotoForm adminName={adminName} />
+        </CardContent>
+      </Card>
 
       <Card className="mt-5 max-w-xl">
         <CardContent>

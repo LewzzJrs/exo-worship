@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ListMusicIcon, MusicIcon } from "lucide-react";
+import AdminAvatar from "@/components/shared/AdminAvatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAdminActivity, type AdminActivity } from "@/lib/admin-data";
 import { ADMIN_NAMES, isAdminName } from "@/lib/constants";
@@ -74,12 +74,11 @@ export default async function AdminActivityPage({ searchParams }: PageProps<"/ad
             <ul className="divide-y">
               {activities.map((activity) => {
                 const href = entityHref(activity);
-                const Icon = activity.entity === "lagu" ? MusicIcon : ListMusicIcon;
                 const title = `“${activity.entityTitle}”`;
 
                 return (
                   <li key={activity.id} className="flex items-start gap-3 py-3">
-                    <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                    <AdminAvatar name={activity.adminName} />
                     <div className="min-w-0">
                       <p className="text-sm">
                         <strong>{activity.adminName}</strong> {ACTION_LABEL[activity.action]}{" "}

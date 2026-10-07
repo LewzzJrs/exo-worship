@@ -28,7 +28,8 @@ export default function SetlistCard({ setlist, href, showAuthor = false }: Setli
               createdBy={setlist.createdBy}
               updatedAt={setlist.updatedAt}
               updatedBy={setlist.updatedBy}
-              showUpdate
+              variant="inline"
+              className="mt-1"
             />
           )}
         </CardHeader>

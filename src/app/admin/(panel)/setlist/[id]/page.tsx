@@ -27,12 +27,11 @@ export default async function EditTeamSetlistPage({ params }: PageProps<"/admin/
       </Link>
       <h1 className="text-2xl font-semibold">Edit setlist tim</h1>
       <AuthorInfo
-        className="mt-1 mb-6"
+        className="mt-3 mb-6 max-w-xl"
         createdAt={setlist.createdAt}
         createdBy={setlist.createdBy}
         updatedAt={setlist.updatedAt}
         updatedBy={setlist.updatedBy}
-        showUpdate
       />
       <TeamSetlistEditor setlist={setlist} songs={songs} />
     </>
