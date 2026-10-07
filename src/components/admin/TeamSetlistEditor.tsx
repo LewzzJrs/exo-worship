@@ -100,6 +100,7 @@ export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorP
           songs={songs}
           name={name || "Setlist"}
           date={date}
+          sharePath={setlist ? `/setlist/tim/${setlist.id}` : undefined}
           onChange={setItems}
         />
       </div>

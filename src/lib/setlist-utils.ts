@@ -27,12 +27,36 @@ type PdfOptions = {
   date?: string;
 };
 
-// link PDF: songs=slug:key,slug:key (+ nama dan tanggal kalau setlist)
+// link PDF: songs=slug:key:catatan,slug:key (+ nama dan tanggal kalau setlist).
+// catatan di-encode supaya tanda , dan : di dalamnya tidak merusak pemisah
 export function buildPdfUrl({ items, name, date }: PdfOptions) {
   const params = new URLSearchParams({
-    songs: items.map((item) => `${item.slug}:${item.key}`).join(","),
+    songs: items
+      .map((item) =>
+        [item.slug, item.key, item.note?.trim() && encodeURIComponent(item.note.trim())]
+          .filter(Boolean)
+          .join(":"),
+      )
+      .join(","),
   });
   if (name) params.set("name", name);
   if (date) params.set("date", date);
   return `/api/pdf?${params.toString()}`;
+}
+
+type ShareSong = { title: string; key: string; note?: string };
+
+// teks setlist untuk dibagikan ke grup WhatsApp
+export function buildShareText(name: string, date: string, songs: ShareSong[], url?: string) {
+  const lines = [
+    `*${name}*`,
+    formatSetlistDate(date),
+    "",
+    ...songs.map(
+      (song, index) =>
+        `${index + 1}. ${song.title} — ${song.key}${song.note?.trim() ? ` (${song.note.trim()})` : ""}`,
+    ),
+  ];
+  if (url) lines.push("", `Buka setlist: ${url}`);
+  return lines.join("\n");
 }

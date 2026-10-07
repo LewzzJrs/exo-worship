@@ -15,6 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import OfflineSetlist from "@/components/setlist/OfflineSetlist";
 import SetlistFormDialog from "@/components/setlist/SetlistFormDialog";
 import SetlistItemsEditor from "@/components/setlist/SetlistItemsEditor";
 import { useHydrated } from "@/hooks/use-hydrated";
@@ -95,6 +96,9 @@ export default function MySetlistDetail({ id, songs }: MySetlistDetailProps) {
         name={setlist.name}
         date={setlist.date}
         onChange={(items) => setItems(setlist.id, items)}
+      />
+      <OfflineSetlist
+        urls={setlist.items.map((item) => `/lagu/${item.slug}?key=${encodeURIComponent(item.key)}`)}
       />
 
       <AlertDialog>

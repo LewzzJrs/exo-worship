@@ -9,8 +9,8 @@ import { getSongBySlug } from "@/lib/songs";
 const MAX_SONGS = 30;
 
 const querySchema = z.object({
-  // slug:key,slug:key
-  songs: z.string().min(1).max(2000),
+  // slug:key:catatan,slug:key (catatan di-encode)
+  songs: z.string().min(1).max(8000),
   name: z.string().trim().max(60).optional(),
   date: z
     .string()
@@ -44,16 +44,20 @@ export async function GET(request: NextRequest) {
     .split(",")
     .slice(0, MAX_SONGS)
     .map((entry) => {
-      const separator = entry.indexOf(":");
-      return separator === -1
-        ? { slug: entry, key: undefined }
-        : { slug: entry.slice(0, separator), key: entry.slice(separator + 1) };
+      const [slug, key, note] = entry.split(":");
+      let decodedNote: string | undefined;
+      try {
+        decodedNote = note ? decodeURIComponent(note).slice(0, 120) : undefined;
+      } catch {
+        // catatan rusak diabaikan saja
+      }
+      return { slug, key, note: decodedNote };
     });
 
   const pdfSongs: PdfSong[] = [];
   for (const entry of entries) {
     const song = await getSongBySlug(entry.slug);
-    if (song) pdfSongs.push({ song, key: normalizeKey(entry.key, song.key) });
+    if (song) pdfSongs.push({ song, key: normalizeKey(entry.key, song.key), note: entry.note });
   }
   if (pdfSongs.length === 0) {
     return new Response("Lagu tidak ditemukan", { status: 404 });

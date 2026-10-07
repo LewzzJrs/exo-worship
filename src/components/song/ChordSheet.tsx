@@ -9,14 +9,27 @@ type ChordSheetProps = {
   content: string;
   originalKey: string;
   currentKey: string;
+  // mode lirik saja untuk penyanyi
+  lyricsOnly?: boolean;
+  // ukuran huruf dalam rem, semua ukuran di dalamnya ikut membesar
+  fontScale?: number;
 };
 
-function ChordLine({ line }: { line: Line }) {
+// bagian tanpa lirik (intro, interlude) disembunyikan di mode lirik saja
+function hasLyricLine(lines: Line[]) {
+  return lines.some((line) =>
+    line.items.some((item) => item instanceof ChordLyricsPair && item.lyrics?.trim()),
+  );
+}
+
+function ChordLine({ line, lyricsOnly }: { line: Line; lyricsOnly: boolean }) {
   const pairs = line.items.filter((item) => item instanceof ChordLyricsPair);
   if (pairs.length === 0) return null;
 
-  const hasChords = pairs.some((pair) => pair.chords.trim());
   const hasLyrics = pairs.some((pair) => pair.lyrics?.trim());
+  const hasChords = !lyricsOnly && pairs.some((pair) => pair.chords.trim());
+  // baris chord saja (intro, interlude) tidak ditampilkan di mode lirik saja
+  if (!hasLyrics && !hasChords) return null;
 
   return (
     <div className="flex flex-wrap items-end">
@@ -25,9 +38,9 @@ function ChordLine({ line }: { line: Line }) {
           {hasChords && (
             <span
               className={cn(
-                "min-h-5 font-mono text-sm leading-5 font-bold",
+                "min-h-[1.4em] font-mono text-[0.875em] leading-[1.4] font-bold",
                 // baris chord saja (intro, interlude) diberi jarak lebih lebar
-                hasLyrics ? "pr-1.5" : "pr-3",
+                hasLyrics ? "pr-[0.4em]" : "pr-[0.8em]",
               )}
             >
               {pair.chords.trim()}
@@ -35,7 +48,7 @@ function ChordLine({ line }: { line: Line }) {
           )}
           {/* tinggi tetap walau kosong, supaya chord di ujung baris tidak turun sejajar lirik */}
           {hasLyrics && (
-            <span className="min-h-6 leading-6 whitespace-pre-wrap">{pair.lyrics}</span>
+            <span className="min-h-[1.5em] leading-[1.5] whitespace-pre-wrap">{pair.lyrics}</span>
           )}
         </span>
       ))}
@@ -43,28 +56,36 @@ function ChordLine({ line }: { line: Line }) {
   );
 }
 
-export default function ChordSheet({ content, originalKey, currentKey }: ChordSheetProps) {
+export default function ChordSheet({
+  content,
+  originalKey,
+  currentKey,
+  lyricsOnly = false,
+  fontScale = 1,
+}: ChordSheetProps) {
   const sections = useMemo(
     () => parseSections(content, originalKey, currentKey),
     [content, originalKey, currentKey],
   );
 
   return (
-    <div className="space-y-6">
-      {sections.map((section, index) => (
-        <section key={index}>
-          {section.label && (
-            <h3 className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-              {section.label}
-            </h3>
-          )}
-          <div className="space-y-1.5">
-            {section.song.lines.map((line, lineIndex) => (
-              <ChordLine key={lineIndex} line={line} />
-            ))}
-          </div>
-        </section>
-      ))}
+    <div className="space-y-[1.5em]" style={{ fontSize: `${fontScale}rem` }}>
+      {sections
+        .filter((section) => !lyricsOnly || hasLyricLine(section.song.lines))
+        .map((section, index) => (
+          <section key={index}>
+            {section.label && (
+              <h3 className="mb-[0.5em] text-[0.75em] font-semibold tracking-wide text-muted-foreground uppercase">
+                {section.label}
+              </h3>
+            )}
+            <div className={lyricsOnly ? "space-y-[0.15em]" : "space-y-[0.4em]"}>
+              {section.song.lines.map((line, lineIndex) => (
+                <ChordLine key={lineIndex} line={line} lyricsOnly={lyricsOnly} />
+              ))}
+            </div>
+          </section>
+        ))}
     </div>
   );
 }

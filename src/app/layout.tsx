@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
+import ServiceWorkerRegister from "@/components/shared/ServiceWorkerRegister";
 import { APP_NAME } from "@/lib/constants";
 
 const geistSans = Geist({
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Providers>{children}</Providers>
         {/* di atas supaya tidak menutupi navigasi bawah di HP */}
         <Toaster position="top-center" />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

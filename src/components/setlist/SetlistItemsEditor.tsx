@@ -5,6 +5,7 @@ import { ArrowDownIcon, ArrowUpIcon, FileDownIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -13,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import AddSongDialog from "@/components/setlist/AddSongDialog";
+import ShareSetlistButton from "@/components/setlist/ShareSetlistButton";
 import { getKeyOptions } from "@/lib/keys";
 import { buildPdfUrl } from "@/lib/setlist-utils";
 import type { SetlistItem } from "@/types/setlist";
@@ -24,6 +26,8 @@ type SetlistItemsEditorProps = {
   // untuk nama file dan halaman depan PDF
   name: string;
   date: string;
+  // link setlist untuk dibagikan; kosong kalau setlist hanya ada di HP
+  sharePath?: string;
   onChange: (items: SetlistItem[]) => void;
 };
 
@@ -33,12 +37,17 @@ export default function SetlistItemsEditor({
   songs,
   name,
   date,
+  sharePath,
   onChange,
 }: SetlistItemsEditorProps) {
   // lagu yang sudah dihapus dari library dilewati
   const rows = items
     .map((item, index) => ({ ...item, index, song: songs.find((song) => song.slug === item.slug) }))
     .filter((row) => row.song !== undefined);
+
+  function update(index: number, change: Partial<SetlistItem>) {
+    onChange(items.map((item, itemIndex) => (itemIndex === index ? { ...item, ...change } : item)));
+  }
 
   function move(from: number, to: number) {
     if (to < 0 || to >= items.length) return;
@@ -66,6 +75,18 @@ export default function SetlistItemsEditor({
               Download PDF gabungan
             </a>
           </Button>
+        )}
+        {rows.length > 0 && (
+          <ShareSetlistButton
+            name={name}
+            date={date}
+            path={sharePath}
+            songs={rows.map((row) => ({
+              title: row.song?.title ?? row.slug,
+              key: row.key,
+              note: row.note,
+            }))}
+          />
         )}
       </div>
 
@@ -101,16 +122,7 @@ export default function SetlistItemsEditor({
                   </div>
                   <div className="flex items-center gap-2 pl-8">
                     <span className="text-sm text-muted-foreground">Key</span>
-                    <Select
-                      value={row.key}
-                      onValueChange={(key) =>
-                        onChange(
-                          items.map((item, index) =>
-                            index === row.index ? { ...item, key } : item,
-                          ),
-                        )
-                      }
-                    >
+                    <Select value={row.key} onValueChange={(key) => update(row.index, { key })}>
                       <SelectTrigger size="sm" className="w-20" aria-label="Pilih key">
                         <SelectValue>{row.key}</SelectValue>
                       </SelectTrigger>
@@ -143,6 +155,18 @@ export default function SetlistItemsEditor({
                         <ArrowDownIcon />
                       </Button>
                     </div>
+                  </div>
+                  <div className="pl-8">
+                    <Input
+                      value={row.note ?? ""}
+                      maxLength={120}
+                      placeholder="Catatan, misalnya: intro 2x, naik ke A di reff terakhir"
+                      aria-label={`Catatan untuk ${row.song?.title}`}
+                      onChange={(event) =>
+                        update(row.index, { note: event.target.value || undefined })
+                      }
+                      className="h-8 text-sm"
+                    />
                   </div>
                 </CardContent>
               </Card>

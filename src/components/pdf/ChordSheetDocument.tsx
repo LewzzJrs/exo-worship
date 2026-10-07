@@ -9,6 +9,8 @@ import type { Song } from "@/types/song";
 export type PdfSong = {
   song: Song;
   key: string;
+  // catatan dari setlist, misalnya "intro 2x"
+  note?: string;
 };
 
 type ChordSheetDocumentProps = {
@@ -71,6 +73,15 @@ const styles = StyleSheet.create({
   coverNumber: { width: 24, color: "#888888" },
   coverSong: { flex: 1 },
   coverArtist: { marginTop: 2, fontSize: 9, color: "#666666" },
+  coverNote: { marginTop: 2, fontSize: 9, fontFamily: "Helvetica-Oblique" },
+  note: {
+    marginTop: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    fontSize: 9,
+    fontFamily: "Helvetica-Oblique",
+    backgroundColor: "#f1f1ef",
+  },
   coverKey: { width: 60, textAlign: "right", fontFamily: "Helvetica-Bold" },
 });
 
@@ -94,7 +105,9 @@ function Footer({ label }: { label: string }) {
   );
 }
 
-function SongPage({ song, songKey, footer }: { song: Song; songKey: string; footer: string }) {
+type SongPageProps = { song: Song; songKey: string; note?: string; footer: string };
+
+function SongPage({ song, songKey, note, footer }: SongPageProps) {
   const sections = parseSections(song.content, song.key, songKey);
   const meta = [
     songKey === song.key ? `Key ${songKey}` : `Key ${songKey} (asli ${song.key})`,
@@ -108,6 +121,7 @@ function SongPage({ song, songKey, footer }: { song: Song; songKey: string; foot
         <Text style={styles.title}>{song.title}</Text>
         <Text style={styles.subtitle}>{song.artist}</Text>
         <Text style={styles.meta}>{meta.join("  ·  ")}</Text>
+        {note && <Text style={styles.note}>Catatan: {note}</Text>}
       </View>
 
       {sections.map((section, sectionIndex) => (
@@ -149,12 +163,13 @@ export function ChordSheetDocument({ songs, name, date }: ChordSheetDocumentProp
             {date && <Text style={styles.subtitle}>{formatSetlistDate(date)}</Text>}
             <Text style={styles.meta}>{songs.length} lagu</Text>
           </View>
-          {songs.map(({ song, key }, index) => (
+          {songs.map(({ song, key, note }, index) => (
             <View key={index} style={styles.coverRow}>
               <Text style={styles.coverNumber}>{index + 1}.</Text>
               <View style={styles.coverSong}>
                 <Text>{song.title}</Text>
                 <Text style={styles.coverArtist}>{song.artist}</Text>
+                {note && <Text style={styles.coverNote}>{note}</Text>}
               </View>
               <Text style={styles.coverKey}>Key {key}</Text>
             </View>
@@ -163,8 +178,8 @@ export function ChordSheetDocument({ songs, name, date }: ChordSheetDocumentProp
         </Page>
       )}
 
-      {songs.map(({ song, key }, index) => (
-        <SongPage key={index} song={song} songKey={key} footer={footer} />
+      {songs.map(({ song, key, note }, index) => (
+        <SongPage key={index} song={song} songKey={key} note={note} footer={footer} />
       ))}
     </Document>
   );

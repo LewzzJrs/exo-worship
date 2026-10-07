@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeftIcon, FileDownIcon } from "lucide-react";
+import OfflineSetlist from "@/components/setlist/OfflineSetlist";
+import ShareSetlistButton from "@/components/setlist/ShareSetlistButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +28,8 @@ export default async function TeamSetlistPage({ params }: PageProps<"/setlist/ti
   const items = setlist.items
     .map((item) => ({ ...item, song: songs.find((song) => song.slug === item.slug) }))
     .filter((item) => item.song !== undefined);
+  const songHref = (item: (typeof items)[number]) =>
+    `/lagu/${item.slug}?key=${encodeURIComponent(item.key)}`;
 
   return (
     <>
@@ -46,21 +50,31 @@ export default async function TeamSetlistPage({ params }: PageProps<"/setlist/ti
       </p>
 
       {items.length > 0 && (
-        <Button asChild className="mt-4">
-          <a href={buildPdfUrl({ items, name: setlist.name, date: setlist.date })} download>
-            <FileDownIcon />
-            Download PDF gabungan
-          </a>
-        </Button>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button asChild>
+            <a href={buildPdfUrl({ items, name: setlist.name, date: setlist.date })} download>
+              <FileDownIcon />
+              Download PDF gabungan
+            </a>
+          </Button>
+          <ShareSetlistButton
+            name={setlist.name}
+            date={setlist.date}
+            path={`/setlist/tim/${setlist.id}`}
+            songs={items.map((item) => ({
+              title: item.song?.title ?? item.slug,
+              key: item.key,
+              note: item.note,
+            }))}
+          />
+        </div>
       )}
+      <OfflineSetlist urls={[`/setlist/tim/${setlist.id}`, ...items.map(songHref)]} />
 
       <ol className="mt-6 grid gap-3">
         {items.map((item, index) => (
           <li key={`${item.slug}-${index}`}>
-            <Link
-              href={`/lagu/${item.slug}?key=${encodeURIComponent(item.key)}`}
-              className="block rounded-xl focus-visible:outline-2"
-            >
+            <Link href={songHref(item)} className="block rounded-xl focus-visible:outline-2">
               <Card className="transition-shadow hover:shadow-md">
                 <CardContent className="flex items-center gap-3">
                   <span className="w-5 shrink-0 text-center font-semibold text-muted-foreground tabular-nums">
@@ -69,6 +83,7 @@ export default async function TeamSetlistPage({ params }: PageProps<"/setlist/ti
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{item.song?.title}</p>
                     <p className="truncate text-sm text-muted-foreground">{item.song?.artist}</p>
+                    {item.note && <p className="mt-1 text-sm italic">{item.note}</p>}
                   </div>
                   <Badge variant="secondary" className="shrink-0">
                     Key {item.key}

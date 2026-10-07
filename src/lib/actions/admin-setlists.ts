@@ -8,11 +8,23 @@ import { setlistSchema } from "@/lib/validations/setlist";
 
 const teamSetlistSchema = setlistSchema.extend({
   items: z
-    .array(z.object({ slug: z.string().min(1), key: z.string().min(1).max(4) }))
+    .array(
+      z.object({
+        slug: z.string().min(1),
+        key: z.string().min(1).max(4),
+        // catatan kosong tidak disimpan
+        note: z
+          .string()
+          .trim()
+          .max(120, "Catatan maksimal 120 karakter")
+          .optional()
+          .transform((note) => note || undefined),
+      }),
+    )
     .max(30, "Maksimal 30 lagu per setlist"),
 });
 
-export type TeamSetlistValues = z.infer<typeof teamSetlistSchema>;
+export type TeamSetlistValues = z.input<typeof teamSetlistSchema>;
 
 export async function saveTeamSetlist(values: TeamSetlistValues, id?: string) {
   await verifyAdmin();
