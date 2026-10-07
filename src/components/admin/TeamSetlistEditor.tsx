@@ -6,6 +6,11 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DraftBanner,
+  LeaveConfirmDialog,
+  formatDraftTime,
+} from "@/components/admin/UnsavedChanges";
 import SetlistItemsEditor from "@/components/setlist/SetlistItemsEditor";
 import {
   AlertDialog,
@@ -21,6 +26,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { clearDraft, useDraftAutosave, useInitialDraft } from "@/hooks/use-draft";
+import { useLeaveConfirmation } from "@/hooks/use-leave-confirmation";
 import { deleteTeamSetlist, saveTeamSetlist } from "@/lib/actions/admin-setlists";
 import { nextSunday } from "@/lib/setlist-utils";
 import { setlistSchema, type SetlistValues } from "@/lib/validations/setlist";
@@ -33,17 +40,47 @@ type TeamSetlistEditorProps = {
   songs: SongSummary[];
 };
 
+type SetlistDraft = SetlistValues & { items: SetlistItem[] };
+
 export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorProps) {
   const router = useRouter();
   const [items, setItems] = useState<SetlistItem[]>(setlist?.items ?? []);
+  // daftar lagu terakhir yang tersimpan, untuk tahu ada perubahan atau tidak
+  const [savedItems, setSavedItems] = useState<SetlistItem[]>(setlist?.items ?? []);
   const [isSaving, startSaving] = useTransition();
   const [isDeleting, startDeleting] = useTransition();
   const form = useForm<SetlistValues>({
     resolver: zodResolver(setlistSchema),
     defaultValues: { name: setlist?.name ?? "", date: setlist?.date ?? nextSunday() },
   });
-  const { errors } = form.formState;
+  const { errors, isDirty: isFormDirty, defaultValues } = form.formState;
   const [name, date] = useWatch({ control: form.control, name: ["name", "date"] });
+  const hasChanges = isFormDirty || JSON.stringify(items) !== JSON.stringify(savedItems);
+
+  // draft per setlist, tersimpan di perangkat ini
+  const draftKey = `setlist:${setlist?.id ?? "baru"}`;
+  const initialDraft = useInitialDraft<SetlistDraft>(draftKey);
+  const [isDraftHandled, setIsDraftHandled] = useState(false);
+  const lastDraftAt = useDraftAutosave<SetlistDraft>(draftKey, { name, date, items }, hasChanges);
+  const leave = useLeaveConfirmation(hasChanges && !isSaving && !isDeleting);
+  const showDraftBanner =
+    initialDraft !== null &&
+    !isDraftHandled &&
+    JSON.stringify(initialDraft.values) !==
+      JSON.stringify({ name: defaultValues?.name, date: defaultValues?.date, items: savedItems });
+
+  function restoreDraft() {
+    if (!initialDraft) return;
+    const { items: draftItems, ...values } = initialDraft.values;
+    form.reset(values, { keepDefaultValues: true });
+    setItems(draftItems);
+    setIsDraftHandled(true);
+  }
+
+  function discardDraft() {
+    clearDraft(draftKey);
+    setIsDraftHandled(true);
+  }
 
   function onSubmit(values: SetlistValues) {
     startSaving(async () => {
@@ -52,6 +89,10 @@ export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorP
         toast.error(result.error);
         return;
       }
+      // sudah tersimpan: draft dibuang dan editor dianggap bersih lagi
+      clearDraft(draftKey);
+      form.reset(values);
+      setSavedItems(items);
       toast.success(setlist ? "Setlist disimpan" : "Setlist tim dibuat");
       if (setlist) router.refresh();
       else router.push(`/admin/setlist/${result.id}`);
@@ -66,6 +107,7 @@ export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorP
         toast.error(result.error);
         return;
       }
+      clearDraft(draftKey);
       toast.success("Setlist dihapus");
       router.push("/admin/setlist");
     });
@@ -73,6 +115,17 @@ export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorP
 
   return (
     <div className="max-w-3xl">
+      {showDraftBanner && (
+        <div className="mb-6">
+          <DraftBanner
+            savedAt={initialDraft.savedAt}
+            onRestore={restoreDraft}
+            onDiscard={discardDraft}
+          />
+        </div>
+      )}
+      <LeaveConfirmDialog open={!!leave.pendingHref} onStay={leave.stay} onLeave={leave.leave} />
+
       {/* daftar lagu di luar form, supaya tombol-tombolnya tidak ikut mengirim form */}
       <form id="team-setlist-form" onSubmit={form.handleSubmit(onSubmit)} noValidate>
         <div className="grid gap-4 sm:grid-cols-[1fr_12rem]">
@@ -109,6 +162,13 @@ export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorP
         <Button type="submit" form="team-setlist-form" size="lg" disabled={isSaving}>
           {isSaving ? "Menyimpan..." : setlist ? "Simpan setlist" : "Buat setlist tim"}
         </Button>
+        {hasChanges && (
+          <span className="text-xs text-muted-foreground">
+            {lastDraftAt
+              ? `Belum disimpan · draft otomatis ${formatDraftTime(lastDraftAt)}`
+              : "Belum disimpan"}
+          </span>
+        )}
         {setlist && (
           <AlertDialog>
             <AlertDialogTrigger asChild>

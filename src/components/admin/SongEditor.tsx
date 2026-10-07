@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
@@ -8,6 +8,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ExternalLinkIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 import ImportPanel from "@/components/admin/ImportPanel";
+import {
+  DraftBanner,
+  LeaveConfirmDialog,
+  formatDraftTime,
+} from "@/components/admin/UnsavedChanges";
 import ChordSheet from "@/components/song/ChordSheet";
 import {
   AlertDialog,
@@ -32,6 +37,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { clearDraft, useDraftAutosave, useInitialDraft } from "@/hooks/use-draft";
+import { useLeaveConfirmation } from "@/hooks/use-leave-confirmation";
 import { deleteSong, saveSong } from "@/lib/actions/admin-songs";
 import type { ImportResult } from "@/lib/import/normalize";
 import { ALL_KEYS } from "@/lib/keys";
@@ -71,17 +78,42 @@ export default function SongEditor({ song, fromRequest }: SongEditorProps) {
       content: song?.content ?? "",
     },
   });
-  const { errors } = form.formState;
+  const { errors, isDirty, defaultValues } = form.formState;
   const [content, songKey] = useWatch({ control: form.control, name: ["content", "key"] });
+  const allValues = useWatch({ control: form.control });
+
+  // draft per lagu (atau per request / lagu baru), tersimpan di perangkat ini
+  const draftKey = `lagu:${song?.slug ?? (fromRequest ? `request-${fromRequest.id}` : "baru")}`;
+  const initialDraft = useInitialDraft<SongValues>(draftKey);
+  const [isDraftHandled, setIsDraftHandled] = useState(false);
+  const lastDraftAt = useDraftAutosave(draftKey, allValues, isDirty);
+  const leave = useLeaveConfirmation(isDirty && !isSaving && !isDeleting);
+  const showDraftBanner =
+    initialDraft !== null &&
+    !isDraftHandled &&
+    JSON.stringify(initialDraft.values) !== JSON.stringify(defaultValues);
+
+  function restoreDraft() {
+    if (!initialDraft) return;
+    // nilai awal tetap dari database, jadi form langsung dianggap ada perubahan
+    form.reset(initialDraft.values, { keepDefaultValues: true });
+    setIsDraftHandled(true);
+  }
+
+  function discardDraft() {
+    clearDraft(draftKey);
+    setIsDraftHandled(true);
+  }
 
   function handleImported(result: ImportResult) {
     const current = form.getValues("content").trim();
     if (current && !window.confirm("Ganti isi chord dan lirik dengan hasil impor?")) return;
 
-    form.setValue("content", result.content, { shouldDirty: true, shouldValidate: true });
-    if (result.title && !form.getValues("title")) form.setValue("title", result.title);
-    if (result.artist && !form.getValues("artist")) form.setValue("artist", result.artist);
-    if (result.key) form.setValue("key", result.key);
+    const options = { shouldDirty: true, shouldValidate: true };
+    form.setValue("content", result.content, options);
+    if (result.title && !form.getValues("title")) form.setValue("title", result.title, options);
+    if (result.artist && !form.getValues("artist")) form.setValue("artist", result.artist, options);
+    if (result.key) form.setValue("key", result.key, options);
   }
 
   function onSubmit(values: SongValues) {
@@ -91,6 +123,9 @@ export default function SongEditor({ song, fromRequest }: SongEditorProps) {
         toast.error(result.error);
         return;
       }
+      // sudah tersimpan: draft dibuang dan form dianggap bersih lagi
+      clearDraft(draftKey);
+      form.reset(values);
       toast.success(song ? "Perubahan disimpan" : "Lagu ditambahkan");
       if (song) router.refresh();
       else router.push("/admin/lagu");
@@ -105,6 +140,7 @@ export default function SongEditor({ song, fromRequest }: SongEditorProps) {
         toast.error(result.error);
         return;
       }
+      clearDraft(draftKey);
       toast.success("Lagu dihapus");
       router.push("/admin/lagu");
     });
@@ -112,6 +148,14 @@ export default function SongEditor({ song, fromRequest }: SongEditorProps) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-6">
+      {showDraftBanner && (
+        <DraftBanner
+          savedAt={initialDraft.savedAt}
+          onRestore={restoreDraft}
+          onDiscard={discardDraft}
+        />
+      )}
+      <LeaveConfirmDialog open={!!leave.pendingHref} onStay={leave.stay} onLeave={leave.leave} />
       <FieldGroup className="grid gap-4 md:grid-cols-2">
         <Field data-invalid={!!errors.title}>
           <FieldLabel htmlFor="title">Judul</FieldLabel>
@@ -133,7 +177,9 @@ export default function SongEditor({ song, fromRequest }: SongEditorProps) {
             <FieldLabel htmlFor="key">Key asli</FieldLabel>
             <Select
               value={songKey}
-              onValueChange={(key) => form.setValue("key", key, { shouldValidate: true })}
+              onValueChange={(key) =>
+                form.setValue("key", key, { shouldDirty: true, shouldValidate: true })
+              }
             >
               <SelectTrigger id="key" className="w-full bg-card">
                 <SelectValue />
@@ -212,6 +258,13 @@ export default function SongEditor({ song, fromRequest }: SongEditorProps) {
         <Button type="submit" size="lg" disabled={isSaving}>
           {isSaving ? "Menyimpan..." : song ? "Simpan perubahan" : "Tambah lagu"}
         </Button>
+        {isDirty && (
+          <span className="text-xs text-muted-foreground">
+            {lastDraftAt
+              ? `Belum disimpan · draft otomatis ${formatDraftTime(lastDraftAt)}`
+              : "Belum disimpan"}
+          </span>
+        )}
         {song && (
           <Button asChild variant="outline" size="lg" className="bg-card">
             <Link href={`/lagu/${song.slug}`} target="_blank">
