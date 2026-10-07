@@ -78,6 +78,6 @@ export async function proxy(request: NextRequest) {
 // semua halaman dikunci, kecuali file statis, manifest, dan service worker (untuk pasang di HP dan offline)
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|robots.txt|manifest.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|robots.txt|manifest.webmanifest|admin.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|webp|ico)$).*)",
   ],
 };

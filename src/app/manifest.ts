@@ -8,6 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Exo Worship",
     description: "Library chord dan aransemen lagu tim Exo Worship.",
     lang: "id",
+    id: "/",
     start_url: "/",
     scope: "/",
     display: "standalone",

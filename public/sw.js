@@ -5,7 +5,8 @@ const VERSION = "v1";
 const PAGES_CACHE = `exo-pages-${VERSION}`;
 const ASSETS_CACHE = `exo-assets-${VERSION}`;
 
-const OFFLINE_HTML = `<!doctype html>
+// halaman pengganti saat offline
+const offlineHtml = (message, homeHref, homeLabel) => `<!doctype html>
 <html lang="id">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,8 +14,8 @@ const OFFLINE_HTML = `<!doctype html>
 <body style="margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center;font-family:system-ui,sans-serif;background:#e6e6e4;color:#111">
   <div>
     <h1 style="font-size:20px">Kamu sedang offline</h1>
-    <p style="color:#555">Halaman ini belum pernah dibuka di HP ini. Coba lagi saat ada sinyal.</p>
-    <p><a href="/" style="color:#111">Ke Beranda</a></p>
+    <p style="color:#555">${message}</p>
+    <p><a href="${homeHref}" style="color:#111">${homeLabel}</a></p>
   </div>
 </body>
 </html>`;
@@ -50,6 +51,25 @@ async function savePage(cache, request, response) {
   if (response.ok && !response.redirected) await cache.put(request, response);
 }
 
+function offlineResponse(message, homeHref, homeLabel) {
+  return new Response(offlineHtml(message, homeHref, homeLabel), {
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+}
+
+// halaman admin selalu butuh internet (data harus terbaru), tidak pernah disimpan
+async function networkOnlyAdmin(request) {
+  try {
+    return await fetch(request);
+  } catch {
+    return offlineResponse(
+      "Panel admin butuh internet supaya data selalu terbaru. Coba lagi saat ada sinyal.",
+      new URL(request.url).pathname,
+      "Coba lagi",
+    );
+  }
+}
+
 // halaman: ambil dari internet dulu, kalau gagal pakai simpanan
 async function networkFirstPage(request) {
   const cache = await caches.open(PAGES_CACHE);
@@ -61,7 +81,11 @@ async function networkFirstPage(request) {
     return (
       (await cache.match(request, { ignoreVary: true })) ||
       (await cache.match(request, { ignoreVary: true, ignoreSearch: true })) ||
-      new Response(OFFLINE_HTML, { headers: { "Content-Type": "text/html; charset=utf-8" } })
+      offlineResponse(
+        "Halaman ini belum pernah dibuka di HP ini. Coba lagi saat ada sinyal.",
+        "/",
+        "Ke Beranda",
+      )
     );
   }
 }
@@ -85,6 +109,7 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     if (isCacheablePage(url)) event.respondWith(networkFirstPage(request));
+    else if (url.pathname.startsWith("/admin")) event.respondWith(networkOnlyAdmin(request));
     return;
   }
 

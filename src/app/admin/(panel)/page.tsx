@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ListMusicIcon, MessageSquarePlusIcon, MusicIcon, PlusIcon } from "lucide-react";
+import InstallAdminApp from "@/components/admin/InstallAdminApp";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDashboardCounts } from "@/lib/admin-data";
@@ -64,6 +65,8 @@ export default async function AdminDashboardPage() {
           </Link>
         </Button>
       </div>
+
+      <InstallAdminApp />
     </>
   );
 }
