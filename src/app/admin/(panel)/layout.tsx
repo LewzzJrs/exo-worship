@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { ExternalLinkIcon, UserRoundIcon } from "lucide-react";
+import { ExternalLinkIcon, LogOutIcon, UserRoundIcon } from "lucide-react";
 import AdminNav from "@/components/admin/AdminNav";
 import Logo from "@/components/shared/Logo";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { leaveAdminProfile } from "@/lib/actions/admin-auth";
 import { requireAdminName } from "@/lib/dal";
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
@@ -33,6 +35,12 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
                 Lihat aplikasi
                 <ExternalLinkIcon className="size-3.5" />
               </Link>
+              <form action={leaveAdminProfile}>
+                <Button type="submit" variant="ghost" size="sm" aria-label="Keluar dari profil">
+                  <LogOutIcon />
+                  <span className="hidden sm:inline">Keluar</span>
+                </Button>
+              </form>
             </div>
           </div>
           <div className="pb-2">

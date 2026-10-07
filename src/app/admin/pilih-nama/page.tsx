@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ChooseAdminName from "@/components/admin/ChooseAdminName";
+import { adminLogout } from "@/lib/actions/admin-auth";
 import Logo from "@/components/shared/Logo";
 import { getAdminName, verifyAdmin } from "@/lib/dal";
 
@@ -22,6 +23,14 @@ export default async function PilihNamaPage() {
           </p>
         </div>
         <ChooseAdminName currentName={currentName} />
+        <form action={adminLogout} className="mt-6 text-center">
+          <button
+            type="submit"
+            className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+          >
+            Keluar sepenuhnya dari admin
+          </button>
+        </form>
       </div>
     </main>
   );

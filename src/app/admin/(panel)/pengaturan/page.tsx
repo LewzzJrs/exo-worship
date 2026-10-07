@@ -29,12 +29,13 @@ export default function AdminSettingsPage() {
         <CardContent>
           <h2 className="font-semibold">Sesi admin</h2>
           <p className="mt-1 mb-4 text-sm text-muted-foreground">
-            Password admin diatur lewat ADMIN_PASSWORD di file .env.local (atau pengaturan hosting).
+            Tombol Keluar di atas hanya kembali ke pilihan nama. Tombol ini keluar sepenuhnya, jadi
+            perlu memasukkan password admin lagi.
           </p>
           <form action={adminLogout}>
             <Button type="submit" variant="outline">
               <LogOutIcon />
-              Keluar dari admin
+              Keluar sepenuhnya
             </Button>
           </form>
         </CardContent>

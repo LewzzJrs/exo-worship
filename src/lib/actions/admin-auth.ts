@@ -48,6 +48,13 @@ export async function chooseAdminName(name: string) {
   redirect("/admin");
 }
 
+// keluar dari profil saja: sesi admin tetap, kembali ke pilihan nama tanpa password
+export async function leaveAdminProfile() {
+  (await cookies()).delete(ADMIN_NAME_COOKIE);
+  redirect("/admin/pilih-nama");
+}
+
+// keluar sepenuhnya: harus memasukkan password admin lagi
 export async function adminLogout() {
   const cookieStore = await cookies();
   cookieStore.delete(ADMIN_COOKIE);

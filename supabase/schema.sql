@@ -155,3 +155,4 @@ grant select, insert, update, delete on public.songs, public.team_setlists, publ
 grant usage on all sequences in schema public to service_role;
 grant execute on function public.trending_songs(int, int) to service_role;
 grant execute on function public.search_songs(text) to service_role;
+  
