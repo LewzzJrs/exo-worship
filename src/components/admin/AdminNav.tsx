@@ -9,6 +9,7 @@ const ADMIN_LINKS = [
   { href: "/admin/lagu", label: "Lagu" },
   { href: "/admin/setlist", label: "Setlist Tim" },
   { href: "/admin/request", label: "Request" },
+  { href: "/admin/riwayat", label: "Riwayat" },
   { href: "/admin/pengaturan", label: "Pengaturan" },
 ];
 

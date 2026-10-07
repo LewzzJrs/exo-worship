@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeftIcon, FileDownIcon } from "lucide-react";
 import OfflineSetlist from "@/components/setlist/OfflineSetlist";
 import ShareSetlistButton from "@/components/setlist/ShareSetlistButton";
+import AuthorInfo from "@/components/shared/AuthorInfo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -48,6 +49,7 @@ export default async function TeamSetlistPage({ params }: PageProps<"/setlist/ti
       <p className="mt-1 text-muted-foreground">
         {formatSetlistDate(setlist.date)} · {items.length} lagu
       </p>
+      <AuthorInfo className="mt-1" createdAt={setlist.createdAt} createdBy={setlist.createdBy} />
 
       {items.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">

@@ -8,8 +8,11 @@ import {
   ACCESS_MAX_AGE,
   ADMIN_COOKIE,
   ADMIN_MAX_AGE,
+  ADMIN_NAME_COOKIE,
   COOKIE_OPTIONS,
+  isAdminName,
 } from "@/lib/constants";
+import { verifyAdmin } from "@/lib/dal";
 import { adminLoginSchema, type AdminLoginValues } from "@/lib/validations/admin";
 
 export async function adminLogin(values: AdminLoginValues) {
@@ -33,10 +36,21 @@ export async function adminLogin(values: AdminLoginValues) {
     maxAge: ACCESS_MAX_AGE,
   });
 
+  redirect("/admin/pilih-nama");
+}
+
+// nama dipakai untuk mencatat siapa yang membuat atau mengubah lagu dan setlist
+export async function chooseAdminName(name: string) {
+  await verifyAdmin();
+  if (!isAdminName(name)) return { error: "Nama admin tidak dikenal." };
+
+  (await cookies()).set(ADMIN_NAME_COOKIE, name, { ...COOKIE_OPTIONS, maxAge: ADMIN_MAX_AGE });
   redirect("/admin");
 }
 
 export async function adminLogout() {
-  (await cookies()).delete(ADMIN_COOKIE);
+  const cookieStore = await cookies();
+  cookieStore.delete(ADMIN_COOKIE);
+  cookieStore.delete(ADMIN_NAME_COOKIE);
   redirect("/admin/masuk");
 }

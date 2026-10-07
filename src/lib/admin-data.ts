@@ -79,3 +79,51 @@ export async function getDashboardCounts() {
   ]);
   return { songs, teamSetlists, waitingRequests };
 }
+
+export type AdminActivity = {
+  id: number;
+  adminName: string;
+  action: "dibuat" | "diubah" | "dihapus";
+  entity: "lagu" | "setlist";
+  entityId: string;
+  entityTitle: string;
+  createdAt: string;
+};
+
+type AdminActivityRow = {
+  id: number;
+  admin_name: string;
+  action: AdminActivity["action"];
+  entity: AdminActivity["entity"];
+  entity_id: string;
+  entity_title: string;
+  created_at: string;
+};
+
+// riwayat terbaru, bisa disaring per admin
+export async function getAdminActivity(adminName?: string): Promise<AdminActivity[]> {
+  await verifyAdmin();
+
+  let query = getSupabase()
+    .from("admin_activity")
+    .select("id, admin_name, action, entity, entity_id, entity_title, created_at")
+    .order("created_at", { ascending: false })
+    .limit(300);
+  if (adminName) query = query.eq("admin_name", adminName);
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("Gagal memuat riwayat admin:", error.message);
+    return [];
+  }
+
+  return (data as AdminActivityRow[]).map((row) => ({
+    id: row.id,
+    adminName: row.admin_name,
+    action: row.action,
+    entity: row.entity,
+    entityId: row.entity_id,
+    entityTitle: row.entity_title,
+    createdAt: row.created_at,
+  }));
+}

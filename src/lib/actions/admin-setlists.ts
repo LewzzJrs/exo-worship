@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { verifyAdmin } from "@/lib/dal";
+import { logActivity } from "@/lib/activity";
+import { requireAdminName } from "@/lib/dal";
 import { getSupabase } from "@/lib/supabase";
 import { setlistSchema } from "@/lib/validations/setlist";
 
@@ -27,34 +28,59 @@ const teamSetlistSchema = setlistSchema.extend({
 export type TeamSetlistValues = z.input<typeof teamSetlistSchema>;
 
 export async function saveTeamSetlist(values: TeamSetlistValues, id?: string) {
-  await verifyAdmin();
+  const admin = await requireAdminName();
 
   const parsed = teamSetlistSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const row = { ...parsed.data, updated_at: new Date().toISOString() };
+  const row = { ...parsed.data, updated_at: new Date().toISOString(), updated_by: admin };
   const supabase = getSupabase();
   const { data, error } = id
     ? await supabase.from("team_setlists").update(row).eq("id", id).select("id").single()
-    : await supabase.from("team_setlists").insert(row).select("id").single();
+    : await supabase
+        .from("team_setlists")
+        .insert({ ...row, created_by: admin })
+        .select("id")
+        .single();
 
   if (error) {
     console.error("Gagal menyimpan setlist tim:", error.message);
     return { error: "Gagal menyimpan setlist, coba lagi." };
   }
 
+  await logActivity({
+    admin,
+    action: id ? "diubah" : "dibuat",
+    entity: "setlist",
+    entityId: data.id as string,
+    entityTitle: parsed.data.name,
+  });
+
   revalidatePath("/", "layout");
   return { id: data.id as string };
 }
 
 export async function deleteTeamSetlist(id: string) {
-  await verifyAdmin();
+  const admin = await requireAdminName();
 
-  const { error } = await getSupabase().from("team_setlists").delete().eq("id", id);
+  const { data: deleted, error } = await getSupabase()
+    .from("team_setlists")
+    .delete()
+    .eq("id", id)
+    .select("name")
+    .maybeSingle();
   if (error) {
     console.error("Gagal menghapus setlist tim:", error.message);
     return { error: "Gagal menghapus setlist, coba lagi." };
   }
+
+  await logActivity({
+    admin,
+    action: "dihapus",
+    entity: "setlist",
+    entityId: id,
+    entityTitle: deleted?.name ?? "Setlist",
+  });
 
   revalidatePath("/", "layout");
   return { success: true };

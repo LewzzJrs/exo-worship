@@ -1,5 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ACCESS_COOKIE, ADMIN_COOKIE, DEVICE_COOKIE, DEVICE_MAX_AGE } from "@/lib/constants";
+import {
+  ACCESS_COOKIE,
+  ADMIN_COOKIE,
+  ADMIN_NAME_COOKIE,
+  DEVICE_COOKIE,
+  DEVICE_MAX_AGE,
+  isAdminName,
+} from "@/lib/constants";
 import { isValidAccessToken, isValidAdminToken } from "@/lib/access-token";
 
 function isAdminPath(pathname: string) {
@@ -15,7 +22,15 @@ async function handleAdmin(request: NextRequest) {
   if (pathname === "/admin/masuk") {
     return isAdmin ? NextResponse.redirect(new URL("/admin", request.url)) : NextResponse.next();
   }
-  if (isAdmin) return NextResponse.next();
+
+  if (isAdmin) {
+    // setelah masuk, admin wajib memilih nama dulu supaya perubahannya tercatat
+    const hasName = isAdminName(request.cookies.get(ADMIN_NAME_COOKIE)?.value);
+    if (!hasName && pathname !== "/admin/pilih-nama" && !pathname.startsWith("/api/admin/")) {
+      return NextResponse.redirect(new URL("/admin/pilih-nama", request.url));
+    }
+    return NextResponse.next();
+  }
 
   if (pathname.startsWith("/api/admin/")) {
     return Response.json({ error: "Sesi admin habis, silakan masuk lagi." }, { status: 401 });

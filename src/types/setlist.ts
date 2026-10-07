@@ -13,4 +13,8 @@ export type Setlist = {
   date: string;
   items: SetlistItem[];
   createdAt: string;
+  // nama admin yang membuat dan terakhir mengubah (khusus setlist tim)
+  createdBy?: string;
+  updatedBy?: string;
+  updatedAt?: string;
 };

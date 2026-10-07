@@ -9,6 +9,10 @@ export type Song = {
   // chord di atas lirik, tiap bagian diberi label seperti [Verse], [Chorus], [Bridge]
   content: string;
   createdAt: string;
+  // nama admin yang membuat dan terakhir mengubah
+  createdBy?: string;
+  updatedBy?: string;
+  updatedAt?: string;
 };
 
 // data ringkas untuk daftar lagu, tanpa isi chord

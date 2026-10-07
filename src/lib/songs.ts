@@ -16,9 +16,13 @@ export type SongRow = {
   youtube_url: string | null;
   content: string;
   created_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+  updated_at: string | null;
 };
 
-const SUMMARY_COLUMNS = "slug, title, artist, key, bpm, time_signature, youtube_url, created_at";
+const SUMMARY_COLUMNS =
+  "slug, title, artist, key, bpm, time_signature, youtube_url, created_at, created_by, updated_by, updated_at";
 
 type GetSongsOptions = {
   query?: string;
@@ -35,6 +39,9 @@ function toSummary(row: Omit<SongRow, "content">): SongSummary {
     timeSignature: row.time_signature ?? undefined,
     youtubeUrl: row.youtube_url ?? undefined,
     createdAt: row.created_at,
+    createdBy: row.created_by ?? undefined,
+    updatedBy: row.updated_by ?? undefined,
+    updatedAt: row.updated_at ?? undefined,
   };
 }
 

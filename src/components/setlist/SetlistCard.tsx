@@ -1,10 +1,18 @@
 import Link from "next/link";
 import { CalendarIcon } from "lucide-react";
+import AuthorInfo from "@/components/shared/AuthorInfo";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatSetlistDate } from "@/lib/setlist-utils";
 import type { Setlist } from "@/types/setlist";
 
-export default function SetlistCard({ setlist, href }: { setlist: Setlist; href: string }) {
+type SetlistCardProps = {
+  setlist: Setlist;
+  href: string;
+  // tampilkan siapa yang membuat (setlist tim)
+  showAuthor?: boolean;
+};
+
+export default function SetlistCard({ setlist, href, showAuthor = false }: SetlistCardProps) {
   return (
     <Link href={href} className="block rounded-xl focus-visible:outline-2">
       <Card className="transition-shadow hover:shadow-md">
@@ -14,6 +22,15 @@ export default function SetlistCard({ setlist, href }: { setlist: Setlist; href:
             <CalendarIcon className="size-3.5" />
             {formatSetlistDate(setlist.date)} · {setlist.items.length} lagu
           </CardDescription>
+          {showAuthor && (
+            <AuthorInfo
+              createdAt={setlist.createdAt}
+              createdBy={setlist.createdBy}
+              updatedAt={setlist.updatedAt}
+              updatedBy={setlist.updatedBy}
+              showUpdate
+            />
+          )}
         </CardHeader>
       </Card>
     </Link>

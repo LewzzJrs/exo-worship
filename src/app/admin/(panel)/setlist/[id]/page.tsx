@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeftIcon } from "lucide-react";
 import TeamSetlistEditor from "@/components/admin/TeamSetlistEditor";
+import AuthorInfo from "@/components/shared/AuthorInfo";
 import { getTeamSetlist } from "@/lib/setlists";
 import { getSongs } from "@/lib/songs";
 
@@ -24,7 +25,15 @@ export default async function EditTeamSetlistPage({ params }: PageProps<"/admin/
         <ChevronLeftIcon className="size-4" />
         Setlist tim
       </Link>
-      <h1 className="mb-6 text-2xl font-semibold">Edit setlist tim</h1>
+      <h1 className="text-2xl font-semibold">Edit setlist tim</h1>
+      <AuthorInfo
+        className="mt-1 mb-6"
+        createdAt={setlist.createdAt}
+        createdBy={setlist.createdBy}
+        updatedAt={setlist.updatedAt}
+        updatedBy={setlist.updatedBy}
+        showUpdate
+      />
       <TeamSetlistEditor setlist={setlist} songs={songs} />
     </>
   );

@@ -10,7 +10,12 @@ type TeamSetlistRow = {
   date: string;
   items: SetlistItem[];
   created_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+  updated_at: string | null;
 };
+
+const COLUMNS = "id, name, date, items, created_at, created_by, updated_by, updated_at";
 
 function toSetlist(row: TeamSetlistRow): Setlist {
   return {
@@ -19,6 +24,9 @@ function toSetlist(row: TeamSetlistRow): Setlist {
     date: row.date,
     items: Array.isArray(row.items) ? row.items : [],
     createdAt: row.created_at,
+    createdBy: row.created_by ?? undefined,
+    updatedBy: row.updated_by ?? undefined,
+    updatedAt: row.updated_at ?? undefined,
   };
 }
 
@@ -27,7 +35,7 @@ export async function getTeamSetlists() {
 
   const { data, error } = await getSupabase()
     .from("team_setlists")
-    .select("id, name, date, items, created_at")
+    .select(COLUMNS)
     .order("date", { ascending: false });
   if (error) {
     console.error("Gagal memuat setlist tim:", error.message);
@@ -44,7 +52,7 @@ export async function getTeamSetlist(id: string) {
 
   const { data, error } = await getSupabase()
     .from("team_setlists")
-    .select("id, name, date, items, created_at")
+    .select(COLUMNS)
     .eq("id", id)
     .maybeSingle();
   if (error) console.error("Gagal memuat setlist tim:", error.message);

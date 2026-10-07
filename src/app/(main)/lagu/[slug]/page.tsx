@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeftIcon } from "lucide-react";
+import AuthorInfo from "@/components/shared/AuthorInfo";
 import { Badge } from "@/components/ui/badge";
 import AddToSetlistDialog from "@/components/song/AddToSetlistDialog";
 import LikeButton from "@/components/song/LikeButton";
@@ -47,6 +48,7 @@ export default async function SongPage({ params, searchParams }: PageProps<"/lag
         {song.bpm && <Badge variant="outline">{song.bpm} BPM</Badge>}
         {song.timeSignature && <Badge variant="outline">{song.timeSignature}</Badge>}
       </div>
+      <AuthorInfo className="mt-2" createdAt={song.createdAt} createdBy={song.createdBy} />
 
       <div className="mt-4 flex flex-wrap gap-2">
         <LikeButton slug={song.slug} initial={likeSummary} />

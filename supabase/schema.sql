@@ -115,6 +115,24 @@ as $$
     or s.content ilike '%' || keyword || '%';
 $$;
 
+-- Jejak admin: siapa yang membuat dan terakhir mengubah lagu atau setlist tim
+alter table public.songs add column if not exists created_by text;
+alter table public.songs add column if not exists updated_by text;
+alter table public.team_setlists add column if not exists created_by text;
+alter table public.team_setlists add column if not exists updated_by text;
+
+-- Riwayat semua aktivitas admin (termasuk yang sudah dihapus)
+create table if not exists public.admin_activity (
+  id bigint generated always as identity primary key,
+  admin_name text not null,
+  action text not null check (action in ('dibuat', 'diubah', 'dihapus')),
+  entity text not null check (entity in ('lagu', 'setlist')),
+  entity_id text not null,
+  entity_title text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists admin_activity_created_idx on public.admin_activity (created_at desc);
+
 -- Keamanan: semua tabel hanya bisa diakses dari server aplikasi (secret key).
 -- RLS aktif tanpa policy, dan akses publik dicabut, jadi browser tidak bisa membaca langsung.
 alter table public.songs enable row level security;
@@ -123,14 +141,17 @@ alter table public.app_settings enable row level security;
 alter table public.song_views enable row level security;
 alter table public.song_likes enable row level security;
 alter table public.song_requests enable row level security;
+alter table public.admin_activity enable row level security;
 
 revoke all on public.songs, public.team_setlists, public.app_settings,
-  public.song_views, public.song_likes, public.song_requests from anon, authenticated;
+  public.song_views, public.song_likes, public.song_requests, public.admin_activity
+  from anon, authenticated;
 revoke execute on function public.trending_songs(int, int) from public, anon, authenticated;
 revoke execute on function public.search_songs(text) from public, anon, authenticated;
 
 grant select, insert, update, delete on public.songs, public.team_setlists, public.app_settings,
-  public.song_views, public.song_likes, public.song_requests to service_role;
+  public.song_views, public.song_likes, public.song_requests, public.admin_activity
+  to service_role;
 grant usage on all sequences in schema public to service_role;
 grant execute on function public.trending_songs(int, int) to service_role;
 grant execute on function public.search_songs(text) to service_role;

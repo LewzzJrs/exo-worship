@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeftIcon } from "lucide-react";
 import SongEditor from "@/components/admin/SongEditor";
+import AuthorInfo from "@/components/shared/AuthorInfo";
 import { getSongBySlug } from "@/lib/songs";
 
 export const metadata: Metadata = {
@@ -23,7 +24,15 @@ export default async function EditSongPage({ params }: PageProps<"/admin/lagu/[s
         <ChevronLeftIcon className="size-4" />
         Lagu
       </Link>
-      <h1 className="mb-6 text-2xl font-semibold">Edit: {song.title}</h1>
+      <h1 className="text-2xl font-semibold">Edit: {song.title}</h1>
+      <AuthorInfo
+        className="mt-1 mb-6"
+        createdAt={song.createdAt}
+        createdBy={song.createdBy}
+        updatedAt={song.updatedAt}
+        updatedBy={song.updatedBy}
+        showUpdate
+      />
       <SongEditor song={song} />
     </>
   );

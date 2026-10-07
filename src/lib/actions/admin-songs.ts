@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { verifyAdmin } from "@/lib/dal";
+import { logActivity } from "@/lib/activity";
+import { requireAdminName } from "@/lib/dal";
 import { getSupabase } from "@/lib/supabase";
 import { songSchema, type SongValues } from "@/lib/validations/song";
 
@@ -38,7 +39,7 @@ async function createUniqueSlug(title: string) {
 }
 
 export async function saveSong(values: SongValues, { slug, requestId }: SaveOptions = {}) {
-  await verifyAdmin();
+  const admin = await requireAdminName();
 
   const parsed = songSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
@@ -54,18 +55,27 @@ export async function saveSong(values: SongValues, { slug, requestId }: SaveOpti
     // baris kosong di akhir dibuang, spasi di awal baris chord tetap dijaga
     content: content.replace(/\r\n/g, "\n").replace(/\s+$/, ""),
     updated_at: new Date().toISOString(),
+    updated_by: admin,
   };
 
   const supabase = getSupabase();
   const savedSlug = slug ?? (await createUniqueSlug(title));
   const { error } = slug
     ? await supabase.from("songs").update(row).eq("slug", slug)
-    : await supabase.from("songs").insert({ ...row, slug: savedSlug });
+    : await supabase.from("songs").insert({ ...row, slug: savedSlug, created_by: admin });
 
   if (error) {
     console.error("Gagal menyimpan lagu:", error.message);
     return { error: "Gagal menyimpan lagu, coba lagi." };
   }
+
+  await logActivity({
+    admin,
+    action: slug ? "diubah" : "dibuat",
+    entity: "lagu",
+    entityId: savedSlug,
+    entityTitle: title,
+  });
 
   if (requestId) {
     await supabase
@@ -79,10 +89,15 @@ export async function saveSong(values: SongValues, { slug, requestId }: SaveOpti
 }
 
 export async function deleteSong(slug: string) {
-  await verifyAdmin();
+  const admin = await requireAdminName();
   const supabase = getSupabase();
 
-  const { error } = await supabase.from("songs").delete().eq("slug", slug);
+  const { data: deleted, error } = await supabase
+    .from("songs")
+    .delete()
+    .eq("slug", slug)
+    .select("title")
+    .maybeSingle();
   if (error) {
     console.error("Gagal menghapus lagu:", error.message);
     return { error: "Gagal menghapus lagu, coba lagi." };
@@ -90,6 +105,13 @@ export async function deleteSong(slug: string) {
 
   // data suka dan view lagu ini tidak dipakai lagi, link di request juga dilepas
   await Promise.all([
+    logActivity({
+      admin,
+      action: "dihapus",
+      entity: "lagu",
+      entityId: slug,
+      entityTitle: deleted?.title ?? slug,
+    }),
     supabase.from("song_likes").delete().eq("song_slug", slug),
     supabase.from("song_views").delete().eq("song_slug", slug),
     supabase.from("song_requests").update({ song_slug: null }).eq("song_slug", slug),

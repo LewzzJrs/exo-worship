@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { ExternalLinkIcon } from "lucide-react";
+import { ExternalLinkIcon, UserRoundIcon } from "lucide-react";
 import AdminNav from "@/components/admin/AdminNav";
 import Logo from "@/components/shared/Logo";
 import { Badge } from "@/components/ui/badge";
-import { verifyAdmin } from "@/lib/dal";
+import { requireAdminName } from "@/lib/dal";
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
-  await verifyAdmin();
+  const adminName = await requireAdminName();
 
   return (
     <>
@@ -17,13 +17,23 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
               <Logo className="h-10" />
               <Badge variant="secondary">Admin</Badge>
             </Link>
-            <Link
-              href="/"
-              className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              Lihat aplikasi
-              <ExternalLinkIcon className="size-3.5" />
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/admin/pilih-nama"
+                className="flex items-center gap-1 text-sm font-medium hover:underline"
+                title="Ganti nama admin"
+              >
+                <UserRoundIcon className="size-4" />
+                {adminName}
+              </Link>
+              <Link
+                href="/"
+                className="hidden items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground sm:flex"
+              >
+                Lihat aplikasi
+                <ExternalLinkIcon className="size-3.5" />
+              </Link>
+            </div>
           </div>
           <div className="pb-2">
             <AdminNav />

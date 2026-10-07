@@ -21,3 +21,12 @@ export const COOKIE_OPTIONS = {
   sameSite: "lax",
   path: "/",
 } as const;
+
+// nama admin yang bisa dipilih setelah masuk, untuk mencatat siapa membuat atau mengubah data
+export const ADMIN_NAMES = ["Vesah", "Ester", "Lewi"] as const;
+export type AdminName = (typeof ADMIN_NAMES)[number];
+export const ADMIN_NAME_COOKIE = "exo_admin_nama";
+
+export function isAdminName(name: string | undefined): name is AdminName {
+  return ADMIN_NAMES.includes(name as AdminName);
+}

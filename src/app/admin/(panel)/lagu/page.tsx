@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PencilIcon, PlusIcon } from "lucide-react";
 import SearchInput from "@/components/library/SearchInput";
+import AuthorInfo from "@/components/shared/AuthorInfo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,6 +50,14 @@ export default async function AdminSongsPage({ searchParams }: PageProps<"/admin
                     <p className="truncate text-sm text-muted-foreground">
                       {song.artist || "Tanpa artis"}
                     </p>
+                    <AuthorInfo
+                      className="mt-1 truncate"
+                      createdAt={song.createdAt}
+                      createdBy={song.createdBy}
+                      updatedAt={song.updatedAt}
+                      updatedBy={song.updatedBy}
+                      showUpdate
+                    />
                   </div>
                   <Badge variant="secondary">Key {song.key}</Badge>
                   <PencilIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />

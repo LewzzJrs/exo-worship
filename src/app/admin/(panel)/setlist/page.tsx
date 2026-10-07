@@ -33,7 +33,7 @@ export default async function AdminSetlistsPage() {
         <ul className="mt-5 grid gap-3 md:grid-cols-2">
           {setlists.map((setlist) => (
             <li key={setlist.id}>
-              <SetlistCard setlist={setlist} href={`/admin/setlist/${setlist.id}`} />
+              <SetlistCard setlist={setlist} href={`/admin/setlist/${setlist.id}`} showAuthor />
             </li>
           ))}
         </ul>
