@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // file font PDF dibaca saat runtime, jadi harus ikut terbawa ke server (Vercel)
+  outputFileTracingIncludes: {
+    "/api/pdf": ["./src/fonts/**/*"],
+  },
   // service worker selalu diambil versi terbaru (sesuai panduan PWA Next.js)
   async headers() {
     return [

@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeftIcon, FileDownIcon } from "lucide-react";
+import { ChevronLeftIcon } from "lucide-react";
+import PdfPreviewButton from "@/components/pdf/PdfPreviewButton";
 import OfflineSetlist from "@/components/setlist/OfflineSetlist";
 import ShareSetlistButton from "@/components/setlist/ShareSetlistButton";
 import AuthorInfo from "@/components/shared/AuthorInfo";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getEditHistory } from "@/lib/edit-history";
 import { formatSetlistDate } from "@/lib/setlist-utils";
@@ -62,12 +62,11 @@ export default async function TeamSetlistPage({ params }: PageProps<"/setlist/ti
 
       {items.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button asChild>
-            <a href={`/api/pdf?setlist=${setlist.id}`} download>
-              <FileDownIcon />
-              Download PDF gabungan
-            </a>
-          </Button>
+          <PdfPreviewButton
+            url={`/api/pdf?setlist=${setlist.id}`}
+            title={`${setlist.name} · ${items.length} lagu`}
+            label="PDF gabungan"
+          />
           <ShareSetlistButton
             name={setlist.name}
             date={setlist.date}

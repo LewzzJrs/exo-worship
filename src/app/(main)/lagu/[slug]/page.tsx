@@ -64,7 +64,7 @@ export default async function SongPage({ params, searchParams }: PageProps<"/lag
         <LikeButton slug={song.slug} initial={likeSummary} />
         <SaveButton slug={song.slug} />
         <AddToSetlistDialog slug={song.slug} title={song.title} originalKey={song.key} />
-        <SongPdfButton slug={song.slug} originalKey={song.key} />
+        <SongPdfButton slug={song.slug} title={song.title} originalKey={song.key} />
       </div>
 
       {videoId && (

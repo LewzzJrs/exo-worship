@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ChordSheetDocument, type PdfSong } from "@/components/pdf/ChordSheetDocument";
 import { verifyAccess } from "@/lib/dal";
 import { normalizeKey } from "@/lib/keys";
+import { parsePdfOptions } from "@/lib/pdf-options";
 import { getTeamSetlist } from "@/lib/setlists";
 import { getSongBySlug } from "@/lib/songs";
 import type { SetlistItem } from "@/types/setlist";
@@ -100,7 +101,9 @@ export async function GET(request: NextRequest) {
     return new Response("Lagu tidak ditemukan", { status: 404 });
   }
 
-  const buffer = await renderToBuffer(ChordSheetDocument({ songs: pdfSongs, name, date }));
+  // pilihan font dan ukuran dari dialog preview
+  const options = parsePdfOptions(searchParams.get("font"), searchParams.get("size"));
+  const buffer = await renderToBuffer(ChordSheetDocument({ songs: pdfSongs, name, date, options }));
 
   const first = pdfSongs[0];
   const filename = name

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowDownIcon, ArrowUpIcon, FileDownIcon, FilePenLineIcon, XIcon } from "lucide-react";
+import { ArrowDownIcon, ArrowUpIcon, FilePenLineIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import PdfPreviewButton from "@/components/pdf/PdfPreviewButton";
 import AddSongDialog from "@/components/setlist/AddSongDialog";
 import ShareSetlistButton from "@/components/setlist/ShareSetlistButton";
 import { getKeyOptions } from "@/lib/keys";
@@ -76,12 +77,11 @@ export default function SetlistItemsEditor({
           }}
         />
         {rows.length > 0 && (
-          <Button asChild>
-            <a href={pdfHref ?? buildPdfUrl({ items: rows, name, date })} download>
-              <FileDownIcon />
-              Download PDF gabungan
-            </a>
-          </Button>
+          <PdfPreviewButton
+            url={pdfHref ?? buildPdfUrl({ items: rows, name, date })}
+            title={`${name || "Setlist"} · ${rows.length} lagu`}
+            label="PDF gabungan"
+          />
         )}
         {rows.length > 0 && (
           <ShareSetlistButton

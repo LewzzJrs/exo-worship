@@ -1,6 +1,8 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { chordSheetFonts } from "@/components/pdf/fonts";
 import { lineToRows, parseSections } from "@/lib/chord-sheet";
 import { APP_NAME } from "@/lib/constants";
+import { DEFAULT_PDF_OPTIONS, type PdfOptions } from "@/lib/pdf-options";
 import { formatSetlistDate } from "@/lib/setlist-utils";
 import type { Song } from "@/types/song";
 
@@ -19,12 +21,14 @@ type ChordSheetDocumentProps = {
   songs: PdfSong[];
   name?: string;
   date?: string;
+  // jenis font dan ukuran huruf chord + lirik
+  options?: PdfOptions;
 };
 
 const PAGE_PADDING = 40;
 const CONTENT_WIDTH = 595 - PAGE_PADDING * 2; // lebar A4 dalam point
-const COURIER_CHAR_WIDTH = 0.6; // lebar satu huruf Courier = 0,6 x ukuran font
-const BASE_FONT_SIZE = 10;
+// semua pilihan font monospace lebarnya 0,6 x ukuran font per huruf
+const MONO_CHAR_WIDTH = 0.6;
 const NBSP = String.fromCharCode(160);
 
 const styles = StyleSheet.create({
@@ -53,8 +57,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: "#666666",
   },
-  chords: { fontFamily: "Courier-Bold" },
-  lyrics: { fontFamily: "Courier", marginBottom: 3 },
+  lyrics: { marginBottom: 3 },
   footer: {
     position: "absolute",
     bottom: 24,
@@ -93,9 +96,9 @@ function keepSpaces(text: string) {
 }
 
 // baris yang terlalu panjang diperkecil hurufnya supaya tetap muat satu baris
-function fitFontSize(length: number) {
-  const maxSize = CONTENT_WIDTH / (length * COURIER_CHAR_WIDTH);
-  return Math.min(BASE_FONT_SIZE, Math.max(6, maxSize));
+function fitFontSize(length: number, baseSize: number) {
+  const maxSize = CONTENT_WIDTH / (length * MONO_CHAR_WIDTH);
+  return Math.min(baseSize, Math.max(6, maxSize));
 }
 
 function Footer({ label }: { label: string }) {
@@ -113,10 +116,12 @@ type SongPageProps = {
   note?: string;
   arranged?: boolean;
   footer: string;
+  options: PdfOptions;
 };
 
-function SongPage({ song, songKey, note, arranged, footer }: SongPageProps) {
+function SongPage({ song, songKey, note, arranged, footer, options }: SongPageProps) {
   const sections = parseSections(song.content, song.key, songKey);
+  const fonts = chordSheetFonts(options.font);
   const meta = [
     // aransemen khusus tidak menyebut key asli library
     songKey === song.key || arranged ? `Key ${songKey}` : `Key ${songKey} (asli ${song.key})`,
@@ -142,13 +147,16 @@ function SongPage({ song, songKey, note, arranged, footer }: SongPageProps) {
             if (!rows.chords && !rows.lyrics) return null;
             const fontSize = fitFontSize(
               Math.max(rows.chords?.length ?? 0, rows.lyrics?.length ?? 0),
+              options.size,
             );
 
             // baris chord dan liriknya tidak boleh terpisah halaman
             return (
               <View key={lineIndex} wrap={false} style={{ fontSize }}>
-                {rows.chords && <Text style={styles.chords}>{keepSpaces(rows.chords)}</Text>}
-                {rows.lyrics && <Text style={styles.lyrics}>{keepSpaces(rows.lyrics)}</Text>}
+                {rows.chords && <Text style={fonts.chords}>{keepSpaces(rows.chords)}</Text>}
+                {rows.lyrics && (
+                  <Text style={[styles.lyrics, fonts.lyrics]}>{keepSpaces(rows.lyrics)}</Text>
+                )}
               </View>
             );
           })}
@@ -160,7 +168,12 @@ function SongPage({ song, songKey, note, arranged, footer }: SongPageProps) {
   );
 }
 
-export function ChordSheetDocument({ songs, name, date }: ChordSheetDocumentProps) {
+export function ChordSheetDocument({
+  songs,
+  name,
+  date,
+  options = DEFAULT_PDF_OPTIONS,
+}: ChordSheetDocumentProps) {
   const isSetlist = Boolean(name);
   const footer = isSetlist ? `${name} · ${APP_NAME}` : APP_NAME;
 
@@ -196,6 +209,7 @@ export function ChordSheetDocument({ songs, name, date }: ChordSheetDocumentProp
           note={note}
           arranged={arranged}
           footer={footer}
+          options={options}
         />
       ))}
     </Document>
