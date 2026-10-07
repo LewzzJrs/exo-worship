@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ExternalLinkIcon, LogOutIcon } from "lucide-react";
 import AdminNav from "@/components/admin/AdminNav";
 import AdminAvatar from "@/components/shared/AdminAvatar";
+import CopyrightFooter from "@/components/shared/CopyrightFooter";
 import Logo from "@/components/shared/Logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
         </div>
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-16">{children}</main>
+      <CopyrightFooter />
     </>
   );
 }
