@@ -21,12 +21,14 @@ export default function SongViewer({ content, originalKey, initialKey }: SongVie
   const [currentKey, setCurrentKey] = useState(initialKey);
   const isHydrated = useHydrated();
   const viewer = useViewerStore();
+  const scrollSpeed = SCROLL_SPEEDS[viewer.scrollSpeedIndex] ?? SCROLL_SPEEDS[1];
   const wakeLock = useWakeLock();
-  const { isScrolling, setIsScrolling } = useAutoScroll(SCROLL_SPEEDS[viewer.scrollSpeedIndex]);
+  const { isScrolling, setIsScrolling } = useAutoScroll(scrollSpeed.pixelsPerSecond);
 
   // pengaturan dari HP baru dipakai setelah halaman aktif, supaya tidak bentrok dengan HTML server
   const fontScaleIndex = isHydrated ? viewer.fontScaleIndex : 1;
   const lyricsOnly = isHydrated && viewer.lyricsOnly;
+  const chordNumbers = isHydrated && viewer.chordNumbers;
 
   function handleKeyChange(key: string) {
     setCurrentKey(key);
@@ -55,6 +57,8 @@ export default function SongViewer({ content, originalKey, initialKey }: SongVie
         canZoomIn={fontScaleIndex < FONT_SCALES.length - 1}
         onZoom={viewer.changeFontScale}
         lyricsOnly={lyricsOnly}
+        chordNumbers={chordNumbers}
+        onToggleChordNumbers={viewer.toggleChordNumbers}
         onToggleLyricsOnly={viewer.toggleLyricsOnly}
         wakeLock={{
           isSupported: wakeLock.isSupported,
@@ -63,8 +67,9 @@ export default function SongViewer({ content, originalKey, initialKey }: SongVie
         }}
         scroll={{
           isScrolling,
-          speedLevel: viewer.scrollSpeedIndex + 1,
-          maxSpeedLevel: SCROLL_SPEEDS.length,
+          speedLabel: scrollSpeed.label,
+          canSlower: viewer.scrollSpeedIndex > 0,
+          canFaster: viewer.scrollSpeedIndex < SCROLL_SPEEDS.length - 1,
           onToggle: handleToggleScroll,
           onSpeed: viewer.changeScrollSpeed,
         }}
@@ -76,6 +81,7 @@ export default function SongViewer({ content, originalKey, initialKey }: SongVie
             originalKey={originalKey}
             currentKey={currentKey}
             lyricsOnly={lyricsOnly}
+            chordNumbers={chordNumbers}
             fontScale={FONT_SCALES[fontScaleIndex]}
           />
         </CardContent>

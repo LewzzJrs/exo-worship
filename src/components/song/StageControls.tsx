@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  HashIcon,
   MinusIcon,
   MonitorSmartphoneIcon,
   PauseIcon,
@@ -17,23 +18,28 @@ type StageControlsProps = {
   onZoom: (step: number) => void;
   lyricsOnly: boolean;
   onToggleLyricsOnly: () => void;
+  chordNumbers: boolean;
+  onToggleChordNumbers: () => void;
   wakeLock: { isSupported: boolean; isActive: boolean; onToggle: () => void };
   scroll: {
     isScrolling: boolean;
-    speedLevel: number;
-    maxSpeedLevel: number;
+    speedLabel: string;
+    canSlower: boolean;
+    canFaster: boolean;
     onToggle: () => void;
     onSpeed: (step: number) => void;
   };
 };
 
-// alat bantu saat bermain: ukuran huruf, lirik saja, layar menyala, gulir otomatis
+// alat bantu saat bermain: ukuran huruf, lirik saja, chord angka, layar menyala, gulir otomatis
 export default function StageControls({
   canZoomOut,
   canZoomIn,
   onZoom,
   lyricsOnly,
   onToggleLyricsOnly,
+  chordNumbers,
+  onToggleChordNumbers,
   wakeLock,
   scroll,
 }: StageControlsProps) {
@@ -69,6 +75,16 @@ export default function StageControls({
         >
           <TextIcon />
           Lirik saja
+        </Button>
+
+        <Button
+          variant={chordNumbers ? "default" : "outline"}
+          className={cn(!chordNumbers && "bg-card")}
+          aria-pressed={chordNumbers}
+          onClick={onToggleChordNumbers}
+        >
+          <HashIcon />
+          Chord angka
         </Button>
 
         {wakeLock.isSupported && (
@@ -108,20 +124,20 @@ export default function StageControls({
             variant="ghost"
             className="rounded-full hover:bg-background/15 hover:text-background"
             aria-label="Pelankan"
-            disabled={scroll.speedLevel <= 1}
+            disabled={!scroll.canSlower}
             onClick={() => scroll.onSpeed(-1)}
           >
             <MinusIcon />
           </Button>
-          <span className="min-w-14 text-center text-xs font-medium tabular-nums">
-            Speed {scroll.speedLevel}
+          <span className="min-w-12 text-center text-sm font-medium tabular-nums">
+            {scroll.speedLabel}
           </span>
           <Button
             size="icon"
             variant="ghost"
             className="rounded-full hover:bg-background/15 hover:text-background"
             aria-label="Percepat"
-            disabled={scroll.speedLevel >= scroll.maxSpeedLevel}
+            disabled={!scroll.canFaster}
             onClick={() => scroll.onSpeed(1)}
           >
             <PlusIcon />
