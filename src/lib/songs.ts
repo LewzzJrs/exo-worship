@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { verifyAccess } from "@/lib/dal";
 import { getSupabase } from "@/lib/supabase";
 import type { Song, SongSummary } from "@/types/song";
@@ -78,7 +79,8 @@ export async function getSongs({ query, sort = "terbaru" }: GetSongsOptions = {}
     );
 }
 
-export async function getSongBySlug(slug: string): Promise<Song | null> {
+// cache: judul tab dan isi halaman memakai lagu yang sama, cukup sekali ambil per request
+export const getSongBySlug = cache(async (slug: string): Promise<Song | null> => {
   await verifyAccess();
 
   const { data, error } = await getSupabase()
@@ -89,7 +91,7 @@ export async function getSongBySlug(slug: string): Promise<Song | null> {
   if (error) console.error("Gagal memuat lagu:", error.message);
 
   return data ? toSong(data as SongRow) : null;
-}
+});
 
 // untuk memastikan slug yang dikirim dari browser memang lagu yang ada
 export async function songExists(slug: string) {

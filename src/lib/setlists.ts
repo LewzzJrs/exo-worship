@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { verifyAccess } from "@/lib/dal";
 import { getSupabase } from "@/lib/supabase";
 import type { Setlist, SetlistItem } from "@/types/setlist";
@@ -45,7 +46,8 @@ export async function getTeamSetlists() {
   return (data as TeamSetlistRow[]).map(toSetlist);
 }
 
-export async function getTeamSetlist(id: string) {
+// cache: judul tab dan isi halaman memakai setlist yang sama, cukup sekali ambil per request
+export const getTeamSetlist = cache(async (id: string) => {
   await verifyAccess();
   // id yang bukan UUID pasti tidak ada, tidak perlu bertanya ke database
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
@@ -58,4 +60,4 @@ export async function getTeamSetlist(id: string) {
   if (error) console.error("Gagal memuat setlist tim:", error.message);
 
   return data ? toSetlist(data as TeamSetlistRow) : null;
-}
+});

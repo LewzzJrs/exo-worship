@@ -114,7 +114,7 @@ supabase/         Database schema
 
 ## Deployment
 
-The app runs on Vercel. Import the repository, add the same environment variables in the project settings, and deploy. The PDF fonts in `src/fonts` are bundled with the `/api/pdf` route through `outputFileTracingIncludes` in [`next.config.ts`](next.config.ts).
+The app runs on Vercel. Import the repository, add the same environment variables in the project settings, and deploy. [`vercel.json`](vercel.json) pins the server functions to Singapore (`sin1`), next to the Supabase database, so each page avoids slow cross-region database calls. The PDF fonts in `src/fonts` are bundled with the `/api/pdf` route through `outputFileTracingIncludes` in [`next.config.ts`](next.config.ts).
 
 ## License
 
