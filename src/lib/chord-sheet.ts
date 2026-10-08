@@ -1,4 +1,5 @@
 import { ChordLyricsPair, ChordsOverWordsParser, type Line, type Song } from "chordsheetjs";
+import type { ChordPart } from "@/lib/chord-numbers";
 
 export type SongSection = {
   label: string | null;
@@ -56,21 +57,35 @@ export function parseSections(content: string, originalKey: string, targetKey: s
   });
 }
 
-// ubah satu baris jadi teks chord dan teks lirik yang lurus (untuk font monospace di PDF)
-export function lineToRows(line: Line) {
-  let chords = "";
+type ChordFormatter = (chord: string) => ChordPart[];
+
+const plainChord: ChordFormatter = (chord) => [{ text: chord }];
+
+// ubah satu baris jadi teks chord dan teks lirik yang lurus (untuk font monospace di PDF).
+// chordParts sama dengan chords, tapi tetap terpotong per bagian (untuk angka kecil di atas)
+export function lineToRows(line: Line, formatChord: ChordFormatter = plainChord) {
+  const chordParts: ChordPart[] = [];
   let lyrics = "";
 
   for (const item of line.items) {
     if (!(item instanceof ChordLyricsPair)) continue;
     const chord = item.chords.trim();
+    const parts = chord ? formatChord(chord) : [];
+    const length = parts.reduce((total, part) => total + part.text.length, 0);
     const lyric = item.lyrics ?? "";
-    const width = Math.max(chord ? chord.length + 1 : 0, lyric.length);
-    chords += chord.padEnd(width);
+    const width = Math.max(length ? length + 1 : 0, lyric.length);
+    chordParts.push(...parts, { text: " ".repeat(width - length) });
     lyrics += lyric.padEnd(width);
   }
 
-  return { chords: chords.trimEnd() || null, lyrics: lyrics.trimEnd() || null };
+  // spasi di ujung baris dibuang
+  while (chordParts.length > 0 && !chordParts[chordParts.length - 1].text.trim()) chordParts.pop();
+  const chords = chordParts.map((part) => part.text).join("");
+  return {
+    chords: chords || null,
+    chordParts,
+    lyrics: lyrics.trimEnd() || null,
+  };
 }
 
 // tulis ulang isi lagu di key lain (chord di atas lirik), misalnya untuk titik awal aransemen

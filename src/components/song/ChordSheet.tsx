@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { ChordLyricsPair, type Line } from "chordsheetjs";
-import { doNoteName, toNumberChord } from "@/lib/chord-numbers";
+import { doNoteName, numberChordParts } from "@/lib/chord-numbers";
 import { parseSections } from "@/lib/chord-sheet";
 import { cn } from "@/lib/utils";
 
@@ -25,23 +25,18 @@ function hasLyricLine(lines: Line[]) {
   );
 }
 
-// satu chord; di mode angka, tambahan yang diawali angka (7, 2, 9) ditulis kecil di atas
-// supaya tidak tertukar dengan nomor nadanya (1⁷ bukan 17)
+// satu chord, atau chord angka kalau numberKey diisi
 function ChordLabel({ chord, numberKey }: { chord: string; numberKey: string | null }) {
-  const number = numberKey ? toNumberChord(chord, numberKey) : null;
-  if (!number) return chord;
+  if (!numberKey) return chord;
 
-  const raisedSuffix = /^\d/.test(number.suffix);
-  return (
-    <>
-      {number.degree}
-      {raisedSuffix ? (
-        <sup className="text-[0.7em] leading-none">{number.suffix}</sup>
-      ) : (
-        number.suffix
-      )}
-      {number.bass && `/${number.bass}`}
-    </>
+  return numberChordParts(chord, numberKey).map((part, index) =>
+    part.raised ? (
+      <sup key={index} className="text-[0.7em] leading-none">
+        {part.text}
+      </sup>
+    ) : (
+      <Fragment key={index}>{part.text}</Fragment>
+    ),
   );
 }
 

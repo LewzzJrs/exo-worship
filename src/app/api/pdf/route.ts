@@ -101,8 +101,8 @@ export async function GET(request: NextRequest) {
     return new Response("Lagu tidak ditemukan", { status: 404 });
   }
 
-  // pilihan font dan ukuran dari dialog preview
-  const options = parsePdfOptions(searchParams.get("font"), searchParams.get("size"));
+  // pilihan font, ukuran, dan jenis chord dari dialog preview
+  const options = parsePdfOptions(searchParams);
   const buffer = await renderToBuffer(ChordSheetDocument({ songs: pdfSongs, name, date, options }));
 
   const first = pdfSongs[0];

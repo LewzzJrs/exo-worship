@@ -56,3 +56,20 @@ export function toNumberChord(chord: string, key: string): NumberChord | null {
     bass: bassLetter ? toDegree(bassLetter, bassAccidental, doNote) : null,
   };
 }
+
+export type ChordPart = { text: string; raised?: boolean };
+
+// potongan teks chord angka untuk halaman dan PDF;
+// tambahan yang diawali angka (7, 2, 9) ditulis kecil di atas supaya tidak tertukar (1⁷, bukan 17)
+export function numberChordParts(chord: string, key: string): ChordPart[] {
+  const number = toNumberChord(chord, key);
+  if (!number) return [{ text: chord }];
+
+  const bass = number.bass ? `/${number.bass}` : "";
+  if (!/^\d/.test(number.suffix)) return [{ text: number.degree + number.suffix + bass }];
+  return [
+    { text: number.degree },
+    { text: number.suffix, raised: true },
+    ...(bass ? [{ text: bass }] : []),
+  ];
+}

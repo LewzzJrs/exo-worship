@@ -20,7 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PDF_FONTS, PDF_SIZES, withPdfOptions, type PdfFont } from "@/lib/pdf-options";
+import {
+  PDF_CHORD_STYLES,
+  PDF_FONTS,
+  PDF_SIZES,
+  withPdfOptions,
+  type PdfChordStyle,
+  type PdfFont,
+} from "@/lib/pdf-options";
 import { usePdfPrefsStore } from "@/store/pdf-prefs";
 
 type PdfPreviewDialogProps = {
@@ -39,9 +46,9 @@ function filenameFrom(response: Response) {
   return encoded ? decodeURIComponent(encoded) : "exo-worship.pdf";
 }
 
-// preview PDF sebelum diunduh, dengan pilihan jenis font dan ukuran huruf
+// preview PDF sebelum diunduh, dengan pilihan jenis font, ukuran huruf, dan chord huruf/angka
 export default function PdfPreviewDialog({ url, title, onClose }: PdfPreviewDialogProps) {
-  const { font, size, setFont, setSize } = usePdfPrefsStore();
+  const { font, size, chords, setFont, setSize, setChords } = usePdfPrefsStore();
   const [pdf, setPdf] = useState<LoadedPdf | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const pagesRef = useRef<HTMLDivElement>(null);
@@ -50,7 +57,7 @@ export default function PdfPreviewDialog({ url, title, onClose }: PdfPreviewDial
   useEffect(() => {
     if (!url) return;
     let cancelled = false;
-    const pdfUrl = withPdfOptions(url, { font, size });
+    const pdfUrl = withPdfOptions(url, { font, size, chords });
 
     async function load() {
       setIsLoading(true);
@@ -97,7 +104,7 @@ export default function PdfPreviewDialog({ url, title, onClose }: PdfPreviewDial
     return () => {
       cancelled = true;
     };
-  }, [url, font, size]);
+  }, [url, font, size, chords]);
 
   function handleDownload() {
     if (!pdf) return;
@@ -117,7 +124,7 @@ export default function PdfPreviewDialog({ url, title, onClose }: PdfPreviewDial
           <DialogDescription>{title}</DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div className="grid gap-1.5">
             <Label htmlFor="pdf-font">Jenis font</Label>
             <Select value={font} onValueChange={(value) => setFont(value as PdfFont)}>
@@ -143,6 +150,21 @@ export default function PdfPreviewDialog({ url, title, onClose }: PdfPreviewDial
                 {PDF_SIZES.map((option) => (
                   <SelectItem key={option.value} value={String(option.value)}>
                     {option.label} ({option.value} pt)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="col-span-2 grid gap-1.5 sm:col-span-1">
+            <Label htmlFor="pdf-chords">Chord</Label>
+            <Select value={chords} onValueChange={(value) => setChords(value as PdfChordStyle)}>
+              <SelectTrigger id="pdf-chords" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PDF_CHORD_STYLES.map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>

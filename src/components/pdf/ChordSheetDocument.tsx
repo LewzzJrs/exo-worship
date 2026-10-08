@@ -1,5 +1,7 @@
+import { Fragment } from "react";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { chordSheetFonts } from "@/components/pdf/fonts";
+import { doNoteName, numberChordParts } from "@/lib/chord-numbers";
 import { lineToRows, parseSections } from "@/lib/chord-sheet";
 import { APP_NAME } from "@/lib/constants";
 import { DEFAULT_PDF_OPTIONS, type PdfOptions } from "@/lib/pdf-options";
@@ -30,6 +32,8 @@ const CONTENT_WIDTH = 595 - PAGE_PADDING * 2; // lebar A4 dalam point
 // semua pilihan font monospace lebarnya 0,6 x ukuran font per huruf
 const MONO_CHAR_WIDTH = 0.6;
 const NBSP = String.fromCharCode(160);
+// angka kecil di atas pada chord angka (5⁷), dibanding ukuran chord biasa
+const RAISED_SCALE = 0.7;
 
 const styles = StyleSheet.create({
   page: {
@@ -122,9 +126,15 @@ type SongPageProps = {
 function SongPage({ song, songKey, note, arranged, footer, options }: SongPageProps) {
   const sections = parseSections(song.content, song.key, songKey);
   const fonts = chordSheetFonts(options.font);
+  const numberChords = options.chords === "angka";
+  const formatChord = numberChords
+    ? (chord: string) => numberChordParts(chord, songKey)
+    : undefined;
+  const doNote = numberChords ? doNoteName(songKey) : null;
   const meta = [
     // aransemen khusus tidak menyebut key asli library
     songKey === song.key || arranged ? `Key ${songKey}` : `Key ${songKey} (asli ${song.key})`,
+    doNote && `Do = ${doNote}`,
     arranged && "Aransemen khusus setlist",
     song.bpm && `${song.bpm} BPM`,
     song.timeSignature,
@@ -143,7 +153,7 @@ function SongPage({ song, songKey, note, arranged, footer, options }: SongPagePr
         <View key={sectionIndex} style={styles.section}>
           {section.label && <Text style={styles.label}>{section.label.toUpperCase()}</Text>}
           {section.song.lines.map((line, lineIndex) => {
-            const rows = lineToRows(line);
+            const rows = lineToRows(line, formatChord);
             if (!rows.chords && !rows.lyrics) return null;
             const fontSize = fitFontSize(
               Math.max(rows.chords?.length ?? 0, rows.lyrics?.length ?? 0),
@@ -153,7 +163,27 @@ function SongPage({ song, songKey, note, arranged, footer, options }: SongPagePr
             // baris chord dan liriknya tidak boleh terpisah halaman
             return (
               <View key={lineIndex} wrap={false} style={{ fontSize }}>
-                {rows.chords && <Text style={fonts.chords}>{keepSpaces(rows.chords)}</Text>}
+                {rows.chords && (
+                  <Text style={fonts.chords}>
+                    {rows.chordParts.map((part, partIndex) =>
+                      part.raised ? (
+                        // lebih kecil dan naik, tapi tetap selebar satu kolom huruf supaya chord berikutnya tidak bergeser
+                        <Text
+                          key={partIndex}
+                          style={{
+                            fontSize: fontSize * RAISED_SCALE,
+                            verticalAlign: "super",
+                            letterSpacing: fontSize * MONO_CHAR_WIDTH * (1 - RAISED_SCALE),
+                          }}
+                        >
+                          {part.text}
+                        </Text>
+                      ) : (
+                        <Fragment key={partIndex}>{keepSpaces(part.text)}</Fragment>
+                      ),
+                    )}
+                  </Text>
+                )}
                 {rows.lyrics && (
                   <Text style={[styles.lyrics, fonts.lyrics]}>{keepSpaces(rows.lyrics)}</Text>
                 )}
