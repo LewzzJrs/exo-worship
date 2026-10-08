@@ -62,6 +62,8 @@ const styles = StyleSheet.create({
     color: "#666666",
   },
   lyrics: { marginBottom: 3 },
+  // not angka melodi di antara chord dan lirik
+  melody: { color: "#444444" },
   footer: {
     position: "absolute",
     bottom: 24,
@@ -130,7 +132,9 @@ function SongPage({ song, songKey, note, arranged, footer, options }: SongPagePr
   const formatChord = numberChords
     ? (chord: string) => numberChordParts(chord, songKey)
     : undefined;
-  const doNote = numberChords ? doNoteName(songKey) : null;
+  const hasMelody = sections.some((section) => section.lines.some((line) => line.hasMelody));
+  // nada Do dibutuhkan untuk chord angka dan untuk membaca not angka melodi
+  const doNote = numberChords || hasMelody ? doNoteName(songKey) : null;
   const meta = [
     // aransemen khusus tidak menyebut key asli library
     songKey === song.key || arranged ? `Key ${songKey}` : `Key ${songKey} (asli ${song.key})`,
@@ -152,11 +156,15 @@ function SongPage({ song, songKey, note, arranged, footer, options }: SongPagePr
       {sections.map((section, sectionIndex) => (
         <View key={sectionIndex} style={styles.section}>
           {section.label && <Text style={styles.label}>{section.label.toUpperCase()}</Text>}
-          {section.song.lines.map((line, lineIndex) => {
+          {section.lines.map((line, lineIndex) => {
             const rows = lineToRows(line, formatChord);
-            if (!rows.chords && !rows.lyrics) return null;
+            if (!rows.chords && rows.melody.length === 0 && !rows.lyrics) return null;
             const fontSize = fitFontSize(
-              Math.max(rows.chords?.length ?? 0, rows.lyrics?.length ?? 0),
+              Math.max(
+                rows.chords?.length ?? 0,
+                ...rows.melody.map((row) => row.length),
+                rows.lyrics?.length ?? 0,
+              ),
               options.size,
             );
 
@@ -184,6 +192,11 @@ function SongPage({ song, songKey, note, arranged, footer, options }: SongPagePr
                     )}
                   </Text>
                 )}
+                {rows.melody.map((row, melodyIndex) => (
+                  <Text key={melodyIndex} style={[styles.melody, fonts.lyrics]}>
+                    {keepSpaces(row)}
+                  </Text>
+                ))}
                 {rows.lyrics && (
                   <Text style={[styles.lyrics, fonts.lyrics]}>{keepSpaces(rows.lyrics)}</Text>
                 )}

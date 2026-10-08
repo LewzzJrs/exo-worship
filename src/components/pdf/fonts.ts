@@ -24,18 +24,30 @@ Font.register({
 // kata tidak dipotong dengan tanda hubung, supaya baris lirik tetap utuh
 Font.registerHyphenationCallback((word) => [word]);
 
+// ligatur dimatikan: JetBrains Mono menggabung "||" dan "..." jadi satu simbol (dan membuat PDF gagal),
+// padahal tiap huruf harus tetap selebar satu kolom
+const NO_LIGATURES = { liga: false, calt: false };
+
 // gaya huruf untuk baris chord dan lirik sesuai pilihan
 export function chordSheetFonts(font: PdfFont) {
   switch (font) {
     case "jetbrains":
       return {
-        chords: { fontFamily: "JetBrains Mono", fontWeight: "bold" as const },
-        lyrics: { fontFamily: "JetBrains Mono" },
+        chords: {
+          fontFamily: "JetBrains Mono",
+          fontWeight: "bold" as const,
+          fontFeatureSettings: NO_LIGATURES,
+        },
+        lyrics: { fontFamily: "JetBrains Mono", fontFeatureSettings: NO_LIGATURES },
       };
     case "plex":
       return {
-        chords: { fontFamily: "IBM Plex Mono", fontWeight: "bold" as const },
-        lyrics: { fontFamily: "IBM Plex Mono" },
+        chords: {
+          fontFamily: "IBM Plex Mono",
+          fontWeight: "bold" as const,
+          fontFeatureSettings: NO_LIGATURES,
+        },
+        lyrics: { fontFamily: "IBM Plex Mono", fontFeatureSettings: NO_LIGATURES },
       };
     default:
       return { chords: { fontFamily: "Courier-Bold" }, lyrics: { fontFamily: "Courier" } };

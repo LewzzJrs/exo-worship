@@ -60,6 +60,7 @@ Baris lirik kedua
 
 [Chorus]
 C       D       G
+3 . 2 1 2 . 1 7 1
 Lirik chorus di sini`;
 
 export default function SongEditor({ song, fromRequest }: SongEditorProps) {
@@ -225,7 +226,9 @@ export default function SongEditor({ song, fromRequest }: SongEditorProps) {
           <FieldLabel htmlFor="content">Chord dan lirik</FieldLabel>
           <FieldDescription>
             Label bagian di baris sendiri, misalnya [Verse 1] atau [Chorus]. Baris chord ditulis
-            tepat di atas liriknya.
+            tepat di atas liriknya, boleh pakai . / dan | untuk ketukan dan birama (G . . . | C . .
+            .). Not angka melodi (1 . 2 3 | 5 . . .) ditulis di antara baris chord dan lirik, dan
+            tidak ikut berubah saat key diganti.
           </FieldDescription>
           <Textarea
             id="content"

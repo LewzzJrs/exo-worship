@@ -9,6 +9,7 @@ const DO_NAMES = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B
 
 const KEY_PATTERN = /^([A-G])([#b]?)(m?)$/;
 const CHORD_PATTERN = /^([A-G])([#b]?)([^/]*)(?:\/([A-G])([#b]?))?$/;
+const DECORATED_PATTERN = /^(\(?)([^()]*?)(\)?)(\.*)$/;
 
 function noteValue(letter: string, accidental: string) {
   const offset = accidental === "#" ? 1 : accidental === "b" ? -1 : 0;
@@ -62,14 +63,18 @@ export type ChordPart = { text: string; raised?: boolean };
 // potongan teks chord angka untuk halaman dan PDF;
 // tambahan yang diawali angka (7, 2, 9) ditulis kecil di atas supaya tidak tertukar (1⁷, bukan 17)
 export function numberChordParts(chord: string, key: string): ChordPart[] {
-  const number = toNumberChord(chord, key);
+  // kurung dan titik ketukan di sekitar chord tetap, misalnya (G) jadi (1) dan C.... jadi 4....
+  const [, open = "", core = chord, close = "", dots = ""] = chord.match(DECORATED_PATTERN) ?? [];
+  const number = toNumberChord(core, key);
   if (!number) return [{ text: chord }];
 
-  const bass = number.bass ? `/${number.bass}` : "";
-  if (!/^\d/.test(number.suffix)) return [{ text: number.degree + number.suffix + bass }];
+  const after = (number.bass ? `/${number.bass}` : "") + close + dots;
+  if (!/^\d/.test(number.suffix)) {
+    return [{ text: open + number.degree + number.suffix + after }];
+  }
   return [
-    { text: number.degree },
+    { text: open + number.degree },
     { text: number.suffix, raised: true },
-    ...(bass ? [{ text: bass }] : []),
+    ...(after ? [{ text: after }] : []),
   ];
 }
