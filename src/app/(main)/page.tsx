@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ChevronRightIcon } from "lucide-react";
-import AdminAvatar from "@/components/shared/AdminAvatar";
 import SongCard from "@/components/song/SongCard";
 import { formatMonth, getMonthlyRecommendedSongs } from "@/lib/recommendations";
 import { getSongs } from "@/lib/songs";
@@ -18,17 +17,9 @@ export default async function HomePage() {
       <p className="mt-1 text-sm text-muted-foreground">Library chord tim Exo Worship.</p>
 
       <section className="mt-6">
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 className="text-base font-semibold">Rekomendasi bulan ini</h2>
-            <p className="text-xs text-muted-foreground">{formatMonth(recommendation.month)}</p>
-          </div>
-          {recommendation.updatedBy && recommendation.songs.length > 0 && (
-            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <AdminAvatar name={recommendation.updatedBy} size="sm" />
-              Pilihan {recommendation.updatedBy}
-            </p>
-          )}
+        <div className="mb-3">
+          <h2 className="text-base font-semibold">Rekomendasi bulan ini</h2>
+          <p className="text-xs text-muted-foreground">{formatMonth(recommendation.month)}</p>
         </div>
         {recommendation.songs.length > 0 ? (
           <ol className="grid gap-3">
