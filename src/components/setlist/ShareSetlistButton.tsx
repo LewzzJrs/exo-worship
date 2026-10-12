@@ -2,12 +2,12 @@
 
 import { Share2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { buildShareText } from "@/lib/setlist-utils";
+import { buildShareText, type ShareSong } from "@/lib/setlist-utils";
 
 type ShareSetlistButtonProps = {
   name: string;
   date: string;
-  songs: { title: string; key: string; note?: string }[];
+  songs: ShareSong[];
   // link setlist untuk anggota; kosong untuk setlist pribadi yang hanya ada di HP
   path?: string;
 };

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { getSectionFlow } from "@/lib/chord-sheet";
 import { verifyAccess } from "@/lib/dal";
 import { getSupabase } from "@/lib/supabase";
 import type { Song, SongSummary } from "@/types/song";
@@ -91,6 +92,21 @@ export const getSongBySlug = cache(async (slug: string): Promise<Song | null> =>
   if (error) console.error("Gagal memuat lagu:", error.message);
 
   return data ? toSong(data as SongRow) : null;
+});
+
+// urutan bagian (label [ ]) tiap lagu, untuk teks share WhatsApp setlist.
+// hanya labelnya yang dikirim ke browser, bukan isi lagunya
+export const getSongFlows = cache(async (slugs?: string[]) => {
+  await verifyAccess();
+
+  let query = getSupabase().from("songs").select("slug, content");
+  if (slugs) query = query.in("slug", slugs);
+  const { data, error } = await query;
+  if (error) console.error("Gagal memuat urutan lagu:", error.message);
+
+  return Object.fromEntries(
+    (data ?? []).map((row) => [row.slug as string, getSectionFlow(row.content as string)]),
+  ) as Record<string, string[]>;
 });
 
 // untuk memastikan slug yang dikirim dari browser memang lagu yang ada

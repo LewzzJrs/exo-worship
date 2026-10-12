@@ -121,6 +121,9 @@ alter table public.songs add column if not exists updated_by text;
 alter table public.team_setlists add column if not exists created_by text;
 alter table public.team_setlists add column if not exists updated_by text;
 
+-- Lembar gabungan setlist tim (semua lagu dalam satu teks, misalnya untuk medley)
+alter table public.team_setlists add column if not exists combined_sheet text;
+
 -- Riwayat semua aktivitas admin (termasuk yang sudah dihapus)
 create table if not exists public.admin_activity (
   id bigint generated always as identity primary key,

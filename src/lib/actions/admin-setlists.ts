@@ -25,6 +25,8 @@ const teamSetlistSchema = setlistSchema.extend({
       }),
     )
     .max(30, "Maksimal 30 lagu per setlist"),
+  // hanya dikirim kalau berubah; null berarti lembar gabungan dihapus
+  combinedSheet: z.string().max(60000, "Lembar gabungan terlalu panjang").nullable().optional(),
 });
 
 export type TeamSetlistValues = z.input<typeof teamSetlistSchema>;
@@ -35,7 +37,15 @@ export async function saveTeamSetlist(values: TeamSetlistValues, id?: string) {
   const parsed = teamSetlistSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const row = { ...parsed.data, updated_at: new Date().toISOString(), updated_by: admin };
+  const { combinedSheet, ...fields } = parsed.data;
+  const row = {
+    ...fields,
+    updated_at: new Date().toISOString(),
+    updated_by: admin,
+    ...(combinedSheet !== undefined && {
+      combined_sheet: combinedSheet?.trim() ? combinedSheet.replace(/\s+$/, "") : null,
+    }),
+  };
   const supabase = getSupabase();
   const { data, error } = id
     ? await supabase.from("team_setlists").update(row).eq("id", id).select("id").single()
@@ -47,6 +57,12 @@ export async function saveTeamSetlist(values: TeamSetlistValues, id?: string) {
 
   if (error) {
     console.error("Gagal menyimpan setlist tim:", error.message);
+    if (error.message.includes("combined_sheet")) {
+      return {
+        error:
+          "Database belum punya kolom lembar gabungan. Jalankan SQL terbaru dari supabase/schema.sql di Supabase.",
+      };
+    }
     return { error: "Gagal menyimpan setlist, coba lagi." };
   }
 
@@ -98,4 +114,20 @@ export async function getSongForArrangement(slug: string) {
     .eq("slug", slug)
     .maybeSingle();
   return data ? { content: data.content as string, key: data.key as string } : null;
+}
+
+// isi beberapa lagu dari library sekaligus, untuk membuat lembar gabungan setlist
+export async function getSongsForSheet(slugs: string[]) {
+  await requireAdminName();
+
+  const { data } = await getSupabase()
+    .from("songs")
+    .select("slug, content, key")
+    .in("slug", [...new Set(slugs)].slice(0, 30));
+  return Object.fromEntries(
+    (data ?? []).map((row) => [
+      row.slug as string,
+      { content: row.content as string, key: row.key as string },
+    ]),
+  );
 }

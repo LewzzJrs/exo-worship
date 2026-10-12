@@ -14,6 +14,7 @@ The app is built for a team of about 50 members. Members sign in with a single t
 - **My Library**: bookmark songs on your own device
 - **Setlists**
   - Team setlists made by admins, which can include setlist-specific arrangements
+  - A combined sheet that shows the whole setlist (for example a medley) on one page, with its own PDF
   - Personal setlists stored on your device
   - Per-song key and notes, plus sharing via WhatsApp
 - **PDF export** for a single song or a whole setlist, with a live preview and a choice of font and font size
@@ -25,7 +26,7 @@ The app is built for a team of about 50 members. Members sign in with a single t
 - Password-protected panel. Each admin picks their profile and photo after signing in.
 - **Song editor**: chords-over-words format, autosaved drafts, and a warning about unsaved changes before leaving the page
 - **Import** lyrics and chords from Word, PowerPoint, PDF, Google Docs, and Google Slides
-- **Team setlist editor** with custom arrangements that don't change the library version of a song
+- **Team setlist editor** with custom arrangements that don't change the library version of a song, plus a combined sheet editor that puts every song in one editable text for medleys
 - **Monthly recommendations**, managed by a designated admin
 - **Request inbox**, **activity log**, and per-item **edit history** showing who created or changed what, and when
 - Change the team access code. All member devices then have to sign in again.

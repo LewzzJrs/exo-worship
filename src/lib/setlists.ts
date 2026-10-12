@@ -10,6 +10,8 @@ type TeamSetlistRow = {
   name: string;
   date: string;
   items: SetlistItem[];
+  // kolom baru; belum ada kalau SQL terbaru belum dijalankan
+  combined_sheet?: string | null;
   created_at: string;
   created_by: string | null;
   updated_by: string | null;
@@ -24,6 +26,7 @@ function toSetlist(row: TeamSetlistRow): Setlist {
     name: row.name,
     date: row.date,
     items: Array.isArray(row.items) ? row.items : [],
+    combinedSheet: row.combined_sheet ?? undefined,
     createdAt: row.created_at,
     createdBy: row.created_by ?? undefined,
     updatedBy: row.updated_by ?? undefined,
@@ -54,7 +57,8 @@ export const getTeamSetlist = cache(async (id: string) => {
 
   const { data, error } = await getSupabase()
     .from("team_setlists")
-    .select(COLUMNS)
+    // semua kolom, termasuk lembar gabungan (tetap jalan walau kolomnya belum dibuat)
+    .select("*")
     .eq("id", id)
     .maybeSingle();
   if (error) console.error("Gagal memuat setlist tim:", error.message);

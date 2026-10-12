@@ -16,6 +16,8 @@ export type Setlist = {
   // format YYYY-MM-DD
   date: string;
   items: SetlistItem[];
+  // lembar gabungan semua lagu yang bisa diedit bebas, misalnya untuk medley (khusus setlist tim)
+  combinedSheet?: string;
   createdAt: string;
   // nama admin yang membuat dan terakhir mengubah (khusus setlist tim)
   createdBy?: string;

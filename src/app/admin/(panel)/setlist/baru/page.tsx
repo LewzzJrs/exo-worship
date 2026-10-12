@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronLeftIcon } from "lucide-react";
 import TeamSetlistEditor from "@/components/admin/TeamSetlistEditor";
-import { getSongs } from "@/lib/songs";
+import { getSongFlows, getSongs } from "@/lib/songs";
 
 export const metadata: Metadata = {
   title: "Setlist Tim Baru",
 };
 
 export default async function NewTeamSetlistPage() {
-  const songs = await getSongs({ sort: "judul" });
+  const [songs, songFlows] = await Promise.all([getSongs({ sort: "judul" }), getSongFlows()]);
 
   return (
     <>
@@ -21,7 +21,7 @@ export default async function NewTeamSetlistPage() {
         Setlist tim
       </Link>
       <h1 className="mb-6 text-2xl font-semibold">Setlist tim baru</h1>
-      <TeamSetlistEditor songs={songs} />
+      <TeamSetlistEditor songs={songs} songFlows={songFlows} />
     </>
   );
 }

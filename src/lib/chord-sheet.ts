@@ -205,6 +205,22 @@ function parseLines(rows: string[], fromKey: string, toKey: string) {
   return lines;
 }
 
+// urutan bagian lagu dari label [ ], misalnya ["Intro", "Verse 1", "Chorus"], untuk teks share WhatsApp
+export function getSectionFlow(content: string) {
+  return content
+    .split(/\r?\n/)
+    .map((line) => line.match(LABEL_LINE)?.[1].trim())
+    .filter((label): label is string => Boolean(label))
+    // dirapikan supaya seragam: "INTRO :" atau "intro" jadi "Intro"
+    .map((label) =>
+      label
+        .replace(/\s*:+\s*$/, "")
+        .toLowerCase()
+        .replace(/(^|\s)\S/g, (letter) => letter.toUpperCase()),
+    )
+    .filter(Boolean);
+}
+
 // isi lagu per bagian, dengan chord sudah di-transpose dari key asli ke key tujuan
 export function parseSections(content: string, originalKey: string, targetKey: string) {
   return splitSections(content).map(({ label, lines }): SongSection => ({

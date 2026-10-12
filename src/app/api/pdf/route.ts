@@ -1,7 +1,12 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
-import { ChordSheetDocument, type PdfSong } from "@/components/pdf/ChordSheetDocument";
+import {
+  ChordSheetDocument,
+  CombinedSheetDocument,
+  type PdfSong,
+} from "@/components/pdf/ChordSheetDocument";
+import { parseCombinedSheet } from "@/lib/combined-sheet";
 import { verifyAccess } from "@/lib/dal";
 import { normalizeKey } from "@/lib/keys";
 import { parsePdfOptions } from "@/lib/pdf-options";
@@ -80,6 +85,22 @@ export async function GET(request: NextRequest) {
   if (setlistId) {
     const setlist = await getTeamSetlist(setlistId);
     if (!setlist) return new Response("Setlist tidak ditemukan", { status: 404 });
+
+    // lembar gabungan (medley) yang disusun admin
+    if (searchParams.get("lembar") === "gabungan") {
+      if (!setlist.combinedSheet) {
+        return new Response("Lembar gabungan belum dibuat", { status: 404 });
+      }
+      const buffer = await renderToBuffer(
+        CombinedSheetDocument({
+          name: setlist.name,
+          date: setlist.date,
+          parts: parseCombinedSheet(setlist.combinedSheet, setlist.items[0]?.key ?? null),
+          options: parsePdfOptions(searchParams),
+        }),
+      );
+      return pdfResponse(buffer, `Setlist ${setlist.name} ${setlist.date} (gabungan).pdf`);
+    }
     pdfSongs = await toPdfSongs(setlist.items.slice(0, MAX_SONGS));
     name = setlist.name;
     date = setlist.date;
@@ -110,6 +131,10 @@ export async function GET(request: NextRequest) {
     ? `Setlist ${name}${date ? ` ${date}` : ""}.pdf`
     : `${first.song.title} (${first.key}).pdf`;
 
+  return pdfResponse(buffer, filename);
+}
+
+function pdfResponse(buffer: Buffer, filename: string) {
   return new Response(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",

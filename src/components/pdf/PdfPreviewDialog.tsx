@@ -30,9 +30,16 @@ import {
 } from "@/lib/pdf-options";
 import { usePdfPrefsStore } from "@/store/pdf-prefs";
 
-type PdfPreviewDialogProps = {
+// satu pilihan isi PDF, misalnya lembar gabungan atau per lagu
+export type PdfContent = {
+  label: string;
   // link PDF tanpa pilihan font dan ukuran
-  url: string | null;
+  url: string;
+};
+
+type PdfPreviewDialogProps = {
+  // null berarti dialog tertutup; pilihan pertama dipakai sebagai bawaan
+  contents: PdfContent[] | null;
   title: string;
   onClose: () => void;
 };
@@ -47,8 +54,10 @@ function filenameFrom(response: Response) {
 }
 
 // preview PDF sebelum diunduh, dengan pilihan jenis font, ukuran huruf, dan chord huruf/angka
-export default function PdfPreviewDialog({ url, title, onClose }: PdfPreviewDialogProps) {
+export default function PdfPreviewDialog({ contents, title, onClose }: PdfPreviewDialogProps) {
   const { font, size, chords, setFont, setSize, setChords } = usePdfPrefsStore();
+  const [contentIndex, setContentIndex] = useState(0);
+  const url = contents ? (contents[contentIndex] ?? contents[0]).url : null;
   const [pdf, setPdf] = useState<LoadedPdf | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const pagesRef = useRef<HTMLDivElement>(null);
@@ -123,6 +132,27 @@ export default function PdfPreviewDialog({ url, title, onClose }: PdfPreviewDial
           <DialogTitle>Preview PDF</DialogTitle>
           <DialogDescription>{title}</DialogDescription>
         </DialogHeader>
+
+        {contents && contents.length > 1 && (
+          <div className="grid gap-1.5">
+            <Label htmlFor="pdf-content">Isi PDF</Label>
+            <Select
+              value={String(contents[contentIndex] ? contentIndex : 0)}
+              onValueChange={(value) => setContentIndex(Number(value))}
+            >
+              <SelectTrigger id="pdf-content" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {contents.map((content, index) => (
+                  <SelectItem key={content.url} value={String(index)}>
+                    {content.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div className="grid gap-1.5">

@@ -6,7 +6,7 @@ import TeamSetlistEditor from "@/components/admin/TeamSetlistEditor";
 import AuthorInfo from "@/components/shared/AuthorInfo";
 import { getEditHistory } from "@/lib/edit-history";
 import { getTeamSetlist } from "@/lib/setlists";
-import { getSongs } from "@/lib/songs";
+import { getSongFlows, getSongs } from "@/lib/songs";
 
 export const metadata: Metadata = {
   title: "Edit Setlist Tim",
@@ -14,10 +14,11 @@ export const metadata: Metadata = {
 
 export default async function EditTeamSetlistPage({ params }: PageProps<"/admin/setlist/[id]">) {
   const { id } = await params;
-  const [setlist, songs, edits] = await Promise.all([
+  const [setlist, songs, edits, songFlows] = await Promise.all([
     getTeamSetlist(id),
     getSongs({ sort: "judul" }),
     getEditHistory("setlist", id),
+    getSongFlows(),
   ]);
   if (!setlist) notFound();
 
@@ -39,7 +40,7 @@ export default async function EditTeamSetlistPage({ params }: PageProps<"/admin/
         updatedBy={setlist.updatedBy}
         edits={edits}
       />
-      <TeamSetlistEditor setlist={setlist} songs={songs} />
+      <TeamSetlistEditor setlist={setlist} songs={songs} songFlows={songFlows} />
     </>
   );
 }

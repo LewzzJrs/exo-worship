@@ -2,9 +2,10 @@ import { Fragment } from "react";
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { chordSheetFonts } from "@/components/pdf/fonts";
 import { doNoteName, numberChordParts } from "@/lib/chord-numbers";
-import { lineToRows, parseSections } from "@/lib/chord-sheet";
+import { lineToRows, parseSections, type SongSection } from "@/lib/chord-sheet";
 import { APP_NAME } from "@/lib/constants";
 import { DEFAULT_PDF_OPTIONS, type PdfOptions } from "@/lib/pdf-options";
+import type { SheetPart } from "@/lib/combined-sheet";
 import { formatSetlistDate } from "@/lib/setlist-utils";
 import type { Song } from "@/types/song";
 
@@ -94,6 +95,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#f1f1ef",
   },
   coverKey: { width: 60, textAlign: "right", fontFamily: "Helvetica-Bold" },
+  // judul tiap lagu di lembar gabungan
+  partHeader: {
+    marginTop: 6,
+    marginBottom: 8,
+    paddingBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: "#dddddd",
+  },
+  partTitle: { fontFamily: "Helvetica-Bold", fontSize: 13 },
+  partKeyChange: {
+    fontFamily: "Helvetica-Bold",
+    fontSize: 8,
+    letterSpacing: 1,
+    color: "#666666",
+  },
 });
 
 // spasi diganti spasi tetap supaya posisi chord tidak bergeser
@@ -116,43 +132,27 @@ function Footer({ label }: { label: string }) {
   );
 }
 
-type SongPageProps = {
-  song: Song;
+// nada Do dibutuhkan untuk chord angka dan untuk membaca not angka melodi
+function doNoteFor(sections: SongSection[], key: string, options: PdfOptions) {
+  const hasMelody = sections.some((section) => section.lines.some((line) => line.hasMelody));
+  return options.chords === "angka" || hasMelody ? doNoteName(key) : null;
+}
+
+// isi lagu per bagian: baris chord, not angka, dan lirik dengan huruf monospace
+type SheetSectionsProps = {
+  sections: SongSection[];
+  // key chord yang sedang ditampilkan, untuk chord angka
   songKey: string;
-  note?: string;
-  arranged?: boolean;
-  footer: string;
   options: PdfOptions;
 };
 
-function SongPage({ song, songKey, note, arranged, footer, options }: SongPageProps) {
-  const sections = parseSections(song.content, song.key, songKey);
+function SheetSections({ sections, songKey, options }: SheetSectionsProps) {
   const fonts = chordSheetFonts(options.font);
-  const numberChords = options.chords === "angka";
-  const formatChord = numberChords
-    ? (chord: string) => numberChordParts(chord, songKey)
-    : undefined;
-  const hasMelody = sections.some((section) => section.lines.some((line) => line.hasMelody));
-  // nada Do dibutuhkan untuk chord angka dan untuk membaca not angka melodi
-  const doNote = numberChords || hasMelody ? doNoteName(songKey) : null;
-  const meta = [
-    // aransemen khusus tidak menyebut key asli library
-    songKey === song.key || arranged ? `Key ${songKey}` : `Key ${songKey} (asli ${song.key})`,
-    doNote && `Do = ${doNote}`,
-    arranged && "Aransemen khusus setlist",
-    song.bpm && `${song.bpm} BPM`,
-    song.timeSignature,
-  ].filter(Boolean);
+  const formatChord =
+    options.chords === "angka" ? (chord: string) => numberChordParts(chord, songKey) : undefined;
 
   return (
-    <Page size="A4" style={styles.page}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{song.title}</Text>
-        <Text style={styles.subtitle}>{song.artist}</Text>
-        <Text style={styles.meta}>{meta.join("  ·  ")}</Text>
-        {note && <Text style={styles.note}>Catatan: {note}</Text>}
-      </View>
-
+    <>
       {sections.map((section, sectionIndex) => (
         <View key={sectionIndex} style={styles.section}>
           {section.label && <Text style={styles.label}>{section.label.toUpperCase()}</Text>}
@@ -205,6 +205,41 @@ function SongPage({ song, songKey, note, arranged, footer, options }: SongPagePr
           })}
         </View>
       ))}
+    </>
+  );
+}
+
+type SongPageProps = {
+  song: Song;
+  songKey: string;
+  note?: string;
+  arranged?: boolean;
+  footer: string;
+  options: PdfOptions;
+};
+
+function SongPage({ song, songKey, note, arranged, footer, options }: SongPageProps) {
+  const sections = parseSections(song.content, song.key, songKey);
+  const doNote = doNoteFor(sections, songKey, options);
+  const meta = [
+    // aransemen khusus tidak menyebut key asli library
+    songKey === song.key || arranged ? `Key ${songKey}` : `Key ${songKey} (asli ${song.key})`,
+    doNote && `Do = ${doNote}`,
+    arranged && "Aransemen khusus setlist",
+    song.bpm && `${song.bpm} BPM`,
+    song.timeSignature,
+  ].filter(Boolean);
+
+  return (
+    <Page size="A4" style={styles.page}>
+      <View style={styles.header}>
+        <Text style={styles.title}>{song.title}</Text>
+        <Text style={styles.subtitle}>{song.artist}</Text>
+        <Text style={styles.meta}>{meta.join("  ·  ")}</Text>
+        {note && <Text style={styles.note}>Catatan: {note}</Text>}
+      </View>
+
+      <SheetSections sections={sections} songKey={songKey} options={options} />
 
       <Footer label={footer} />
     </Page>
@@ -255,6 +290,63 @@ export function ChordSheetDocument({
           options={options}
         />
       ))}
+    </Document>
+  );
+}
+
+type CombinedSheetDocumentProps = {
+  name: string;
+  date?: string;
+  parts: SheetPart[];
+  options?: PdfOptions;
+};
+
+// lembar gabungan setlist tim (misalnya medley): semua lagu mengalir dalam satu dokumen
+export function CombinedSheetDocument({
+  name,
+  date,
+  parts,
+  options = DEFAULT_PDF_OPTIONS,
+}: CombinedSheetDocumentProps) {
+  const footer = `${name} · ${APP_NAME}`;
+  const songCount = parts.filter((part) => part.title).length;
+
+  return (
+    <Document title={`${name} (lembar gabungan)`} author={APP_NAME} creator={APP_NAME}>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{name}</Text>
+          {date && <Text style={styles.subtitle}>{formatSetlistDate(date)}</Text>}
+          <Text style={styles.meta}>Lembar gabungan · {songCount} lagu</Text>
+        </View>
+
+        {parts.map((part, index) => {
+          const key = part.key ?? "";
+          // key yang sama dengan isi lembar, jadi tidak ada transpose
+          const sections = parseSections(part.content, key, key);
+          const doNote = doNoteFor(sections, key, options);
+          const meta = [part.key && `Key ${part.key}`, doNote && `Do = ${doNote}`].filter(Boolean);
+
+          return (
+            <View key={index}>
+              {(part.title || part.isKeyChange) && (
+                // judul tidak boleh tertinggal sendirian di bawah halaman
+                <View style={styles.partHeader} minPresenceAhead={60} wrap={false}>
+                  {part.title ? (
+                    <Text style={styles.partTitle}>{part.title}</Text>
+                  ) : (
+                    <Text style={styles.partKeyChange}>PINDAH KEY</Text>
+                  )}
+                  {meta.length > 0 && <Text style={styles.meta}>{meta.join("  ·  ")}</Text>}
+                </View>
+              )}
+              <SheetSections sections={sections} songKey={key} options={options} />
+            </View>
+          );
+        })}
+
+        <Footer label={footer} />
+      </Page>
     </Document>
   );
 }

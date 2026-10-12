@@ -44,7 +44,13 @@ export function buildPdfUrl({ items, name, date }: PdfOptions) {
   return `/api/pdf?${params.toString()}`;
 }
 
-type ShareSong = { title: string; key: string; note?: string };
+export type ShareSong = {
+  title: string;
+  key: string;
+  note?: string;
+  // urutan bagian lagu dari label [ ], misalnya Intro, Verse, Chorus
+  flow?: string[];
+};
 
 // teks setlist untuk dibagikan ke grup WhatsApp
 export function buildShareText(name: string, date: string, songs: ShareSong[], url?: string) {
@@ -52,10 +58,10 @@ export function buildShareText(name: string, date: string, songs: ShareSong[], u
     `*${name}*`,
     formatSetlistDate(date),
     "",
-    ...songs.map(
-      (song, index) =>
-        `${index + 1}. ${song.title} — ${song.key}${song.note?.trim() ? ` (${song.note.trim()})` : ""}`,
-    ),
+    ...songs.flatMap((song, index) => [
+      `${index + 1}. ${song.title} — ${song.key}${song.note?.trim() ? ` (${song.note.trim()})` : ""}`,
+      ...(song.flow?.length ? [`    ${song.flow.join(", ")}`] : []),
+    ]),
   ];
   if (url) lines.push("", `Buka setlist: ${url}`);
   return lines.join("\n");

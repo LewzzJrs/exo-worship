@@ -17,6 +17,8 @@ import {
 import PdfPreviewButton from "@/components/pdf/PdfPreviewButton";
 import AddSongDialog from "@/components/setlist/AddSongDialog";
 import ShareSetlistButton from "@/components/setlist/ShareSetlistButton";
+import { getSectionFlow } from "@/lib/chord-sheet";
+import { combinedSheetShareSongs } from "@/lib/combined-sheet";
 import { getKeyOptions } from "@/lib/keys";
 import { buildPdfUrl } from "@/lib/setlist-utils";
 import type { SetlistItem } from "@/types/setlist";
@@ -32,6 +34,12 @@ type SetlistItemsEditorProps = {
   sharePath?: string;
   // link PDF yang sudah tersimpan (setlist tim, termasuk aransemen khusus)
   pdfHref?: string;
+  // link PDF lembar gabungan yang sudah tersimpan (setlist tim)
+  combinedPdfHref?: string;
+  // lembar gabungan saat ini (setlist tim), untuk urutan lagu di teks share
+  combinedSheet?: string | null;
+  // urutan bagian (label [ ]) tiap lagu library, untuk teks share
+  songFlows?: Record<string, string[]>;
   // tombol aransemen khusus, hanya untuk setlist tim
   onEditArrangement?: (index: number) => void;
   onChange: (items: SetlistItem[]) => void;
@@ -45,6 +53,9 @@ export default function SetlistItemsEditor({
   date,
   sharePath,
   pdfHref,
+  combinedPdfHref,
+  combinedSheet,
+  songFlows,
   onEditArrangement,
   onChange,
 }: SetlistItemsEditorProps) {
@@ -79,6 +90,14 @@ export default function SetlistItemsEditor({
         {rows.length > 0 && (
           <PdfPreviewButton
             url={pdfHref ?? buildPdfUrl({ items: rows, name, date })}
+            contents={
+              combinedPdfHref
+                ? [
+                    { label: "Lembar gabungan (medley)", url: combinedPdfHref },
+                    { label: "Per lagu", url: pdfHref ?? buildPdfUrl({ items: rows, name, date }) },
+                  ]
+                : undefined
+            }
             title={`${name || "Setlist"} · ${rows.length} lagu`}
             label="PDF gabungan"
           />
@@ -88,11 +107,17 @@ export default function SetlistItemsEditor({
             name={name}
             date={date}
             path={sharePath}
-            songs={rows.map((row) => ({
-              title: row.song?.title ?? row.slug,
-              key: row.key,
-              note: row.note,
-            }))}
+            songs={
+              // ada lembar gabungan: urutan lagu dan bagiannya mengikuti medley
+              combinedSheet
+                ? combinedSheetShareSongs(combinedSheet, items[0]?.key ?? null)
+                : rows.map((row) => ({
+                    title: row.song?.title ?? row.slug,
+                    key: row.key,
+                    note: row.note,
+                    flow: row.arrangement ? getSectionFlow(row.arrangement) : songFlows?.[row.slug],
+                  }))
+            }
           />
         )}
       </div>

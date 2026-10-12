@@ -4,9 +4,10 @@ import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Trash2Icon } from "lucide-react";
+import { FilesIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 import ArrangementDialog from "@/components/admin/ArrangementDialog";
+import CombinedSheetDialog from "@/components/admin/CombinedSheetDialog";
 import {
   DraftBanner,
   LeaveConfirmDialog,
@@ -39,15 +40,24 @@ type TeamSetlistEditorProps = {
   // kosong berarti setlist baru
   setlist?: Setlist;
   songs: SongSummary[];
+  // urutan bagian (label [ ]) tiap lagu library, untuk teks share WhatsApp
+  songFlows?: Record<string, string[]>;
 };
 
-type SetlistDraft = SetlistValues & { items: SetlistItem[] };
+type SetlistDraft = SetlistValues & { items: SetlistItem[]; combinedSheet?: string | null };
 
-export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorProps) {
+export default function TeamSetlistEditor({ setlist, songs, songFlows }: TeamSetlistEditorProps) {
   const router = useRouter();
   const [items, setItems] = useState<SetlistItem[]>(setlist?.items ?? []);
   // daftar lagu terakhir yang tersimpan, untuk tahu ada perubahan atau tidak
   const [savedItems, setSavedItems] = useState<SetlistItem[]>(setlist?.items ?? []);
+  // lembar gabungan (medley); null berarti belum dibuat
+  const [combinedSheet, setCombinedSheet] = useState<string | null>(setlist?.combinedSheet ?? null);
+  const [savedCombinedSheet, setSavedCombinedSheet] = useState<string | null>(
+    setlist?.combinedSheet ?? null,
+  );
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const closeSheet = useCallback(() => setIsSheetOpen(false), []);
   const [isSaving, startSaving] = useTransition();
   const [isDeleting, startDeleting] = useTransition();
   // urutan lagu yang aransemennya sedang diedit
@@ -59,19 +69,31 @@ export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorP
   });
   const { errors, isDirty: isFormDirty, defaultValues } = form.formState;
   const [name, date] = useWatch({ control: form.control, name: ["name", "date"] });
-  const hasChanges = isFormDirty || JSON.stringify(items) !== JSON.stringify(savedItems);
+  const hasChanges =
+    isFormDirty ||
+    JSON.stringify(items) !== JSON.stringify(savedItems) ||
+    combinedSheet !== savedCombinedSheet;
 
   // draft per setlist, tersimpan di perangkat ini
   const draftKey = `setlist:${setlist?.id ?? "baru"}`;
   const initialDraft = useInitialDraft<SetlistDraft>(draftKey);
   const [isDraftHandled, setIsDraftHandled] = useState(false);
-  const lastDraftAt = useDraftAutosave<SetlistDraft>(draftKey, { name, date, items }, hasChanges);
+  const lastDraftAt = useDraftAutosave<SetlistDraft>(
+    draftKey,
+    { name, date, items, combinedSheet },
+    hasChanges,
+  );
   const leave = useLeaveConfirmation(hasChanges && !isSaving && !isDeleting);
   const showDraftBanner =
     initialDraft !== null &&
     !isDraftHandled &&
     JSON.stringify(initialDraft.values) !==
-      JSON.stringify({ name: defaultValues?.name, date: defaultValues?.date, items: savedItems });
+      JSON.stringify({
+        name: defaultValues?.name,
+        date: defaultValues?.date,
+        items: savedItems,
+        combinedSheet: savedCombinedSheet,
+      });
 
   const arrangingItem = arrangingIndex === null ? null : items[arrangingIndex];
 
@@ -87,9 +109,11 @@ export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorP
 
   function restoreDraft() {
     if (!initialDraft) return;
-    const { items: draftItems, ...values } = initialDraft.values;
+    const { items: draftItems, combinedSheet: draftSheet, ...values } = initialDraft.values;
     form.reset(values, { keepDefaultValues: true });
     setItems(draftItems);
+    // draft lama (sebelum ada lembar gabungan) tidak mengubah lembar yang tersimpan
+    if (draftSheet !== undefined) setCombinedSheet(draftSheet);
     setIsDraftHandled(true);
   }
 
@@ -100,7 +124,15 @@ export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorP
 
   function onSubmit(values: SetlistValues) {
     startSaving(async () => {
-      const result = await saveTeamSetlist({ ...values, items }, setlist?.id);
+      const result = await saveTeamSetlist(
+        {
+          ...values,
+          items,
+          // hanya dikirim kalau berubah, supaya tidak menimpa tanpa perlu
+          combinedSheet: combinedSheet !== savedCombinedSheet ? combinedSheet : undefined,
+        },
+        setlist?.id,
+      );
       if ("error" in result) {
         toast.error(result.error);
         return;
@@ -109,6 +141,7 @@ export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorP
       clearDraft(draftKey);
       form.reset(values);
       setSavedItems(items);
+      setSavedCombinedSheet(combinedSheet);
       toast.success(setlist ? "Setlist disimpan" : "Setlist tim dibuat");
       if (setlist) router.refresh();
       else router.push(`/admin/setlist/${result.id}`);
@@ -171,6 +204,14 @@ export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorP
           date={date}
           sharePath={setlist ? `/setlist/tim/${setlist.id}` : undefined}
           pdfHref={setlist ? `/api/pdf?setlist=${setlist.id}` : undefined}
+          // PDF memakai versi yang sudah tersimpan
+          combinedPdfHref={
+            setlist && savedCombinedSheet
+              ? `/api/pdf?setlist=${setlist.id}&lembar=gabungan`
+              : undefined
+          }
+          combinedSheet={combinedSheet}
+          songFlows={songFlows}
           onEditArrangement={setArrangingIndex}
           onChange={setItems}
         />
@@ -185,6 +226,70 @@ export default function TeamSetlistEditor({ setlist, songs }: TeamSetlistEditorP
           />
         )}
       </div>
+
+      <section className="mt-8 rounded-xl border bg-card p-4">
+        <div className="flex items-start gap-3">
+          <FilesIcon className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+          <div className="min-w-0 flex-1">
+            <h2 className="font-medium">Lembar gabungan</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {combinedSheet
+                ? "Semua lagu sudah disatukan dalam satu lembar dan bisa dibuka anggota dari halaman setlist. Lembar ini tidak otomatis mengikuti perubahan daftar lagu atau aransemen; pakai Buat ulang di editornya kalau perlu."
+                : "Satukan semua lagu di setlist ini dalam satu lembar yang bisa diedit bebas, misalnya untuk medley."}
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2 pl-8">
+          <Button
+            type="button"
+            variant={combinedSheet ? "outline" : "default"}
+            disabled={items.length === 0}
+            onClick={() => setIsSheetOpen(true)}
+          >
+            {combinedSheet ? "Edit lembar gabungan" : "Buat lembar gabungan"}
+          </Button>
+          {combinedSheet && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
+                >
+                  Hapus lembar gabungan
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Hapus lembar gabungan?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Anggota kembali melihat lagu satu per satu. Daftar lagu dan aransemen per lagu
+                    tetap ada. Perubahan ini baru berlaku setelah setlist disimpan.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                  <AlertDialogAction variant="destructive" onClick={() => setCombinedSheet(null)}>
+                    Hapus
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+        {isSheetOpen && (
+          <CombinedSheetDialog
+            initialText={combinedSheet}
+            items={items}
+            songs={songs}
+            onClose={closeSheet}
+            onSave={(text) => {
+              setCombinedSheet(text);
+              setIsSheetOpen(false);
+            }}
+          />
+        )}
+      </section>
 
       <div className="mt-8 flex flex-wrap items-center gap-2 border-t pt-5">
         <Button type="submit" form="team-setlist-form" size="lg" disabled={isSaving}>

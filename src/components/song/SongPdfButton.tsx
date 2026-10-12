@@ -29,7 +29,7 @@ export default function SongPdfButton({ slug, title, originalKey }: SongPdfButto
         PDF
       </Button>
       <PdfPreviewDialog
-        url={preview?.url ?? null}
+        contents={preview ? [{ label: title, url: preview.url }] : null}
         title={preview ? `${title} (key ${preview.key})` : title}
         onClose={() => setPreview(null)}
       />

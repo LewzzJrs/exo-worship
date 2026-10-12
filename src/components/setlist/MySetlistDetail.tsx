@@ -26,9 +26,11 @@ import type { SongSummary } from "@/types/song";
 type MySetlistDetailProps = {
   id: string;
   songs: SongSummary[];
+  // urutan bagian (label [ ]) tiap lagu, untuk teks share WhatsApp
+  songFlows: Record<string, string[]>;
 };
 
-export default function MySetlistDetail({ id, songs }: MySetlistDetailProps) {
+export default function MySetlistDetail({ id, songs, songFlows }: MySetlistDetailProps) {
   const router = useRouter();
   const isHydrated = useHydrated();
   const setlist = useSetlistStore((state) => state.setlists.find((item) => item.id === id));
@@ -95,6 +97,7 @@ export default function MySetlistDetail({ id, songs }: MySetlistDetailProps) {
         songs={songs}
         name={setlist.name}
         date={setlist.date}
+        songFlows={songFlows}
         onChange={(items) => setItems(setlist.id, items)}
       />
       <OfflineSetlist
